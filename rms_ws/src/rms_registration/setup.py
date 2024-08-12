@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'global_registration_server = src.global_registration_server:main',
+            'local_registration_server = src.local_registration_server:main',
         ],
     },
 )

@@ -51,14 +51,23 @@ def get_pcd_transforms(manipulator, read_path):
         
     """
 
-    search_path = path.join(read_path, f"{manipulator}_tfs.txt")
+    search_path = path.join(read_path, f"{manipulator}_viewpoints.txt")
     search_file = []
     search_file.extend(glob.glob(search_path))
 
     transforms = []
-    for file in search_file:
-        with open(file, "r") as f:
-            lines = file.readlines()
+    with open(search_file[0], "r") as file:
+        lines = file.readlines()
+        lines_ = [np.fromstring(line.strip(), sep=",") for line in lines]
+        for line in lines_:
+            translation = np.array([line[1], line[2], line[3]])
+            rotation = np.array([line[4], line[5], line[6], line[7]])
+            transform = np.identity(4)
+            transform[0:3, 3] = translation
+            transform[0:3, 0:3] = o3d.geometry.get_rotation_matrix_from_quaternion(rotation)
+            transforms.append(transform)
+    return transforms
+
 
 def filter_by_axis(pcd, threshold, axis):
     """
@@ -70,6 +79,12 @@ def filter_by_axis(pcd, threshold, axis):
     indices = np.where(np.abs(array[:, axis]) < threshold)
     filtered = pcd.select_by_index(indices[0])
     return filtered
+
+
+# def filter_out_ground_plane(pcd, threshold, ransac_n=3, iterations=1000):
+#     plane_model, inliers = pcd.segment_plane(
+#         threshold, ransac_n, 0.01, np.array([0, 0, 1]))
+#     )
 
 
 def get_pcd_down(pcd, voxel_size):
@@ -90,7 +105,7 @@ def get_pcd_fpfh(pcd_down, voxel_size):
     
     """
 
-    radius_feature = voxel_size * 1.0
+    radius_feature = voxel_size * 2.0
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
@@ -115,7 +130,7 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
     
     """
 
-    distance_threshold = voxel_size * 1.5
+    distance_threshold = 1.5 * voxel_size
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
         scan_down, 
         model_down, 
@@ -123,12 +138,40 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
         model_fpfh, 
         True,
         distance_threshold,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
         3, 
         [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.8),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
         ], 
         o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999)
     )
     return result
+
+
+def prepare_for_local_registration(scan, model, voxel_size):
+    """
+    
+    """
+
+    scan_down = get_pcd_down(scan, voxel_size)
+    model_down = get_pcd_down(model, voxel_size)
+    return scan_down, model_down
+
+
+def execute_local_registration(scan_down, model_down):
+    """
+
+    """
+
+    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-09, 1e-09, 5000)
+    result = o3d.pipelines.registration.registration_icp(
+        scan_down, 
+        model_down, 
+        0.1, 
+        np.identity(4), 
+        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        criteria
+    )
+    return result
+
