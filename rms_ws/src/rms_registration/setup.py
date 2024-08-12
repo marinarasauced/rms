@@ -19,7 +19,7 @@ setup(
     license='TODO: License declaration',
     entry_points={
         'console_scripts': [
-            'local_registration_server = src.local_registration_server:main',
+            'global_registration_server = src.global_registration_server:main',
         ],
     },
 )

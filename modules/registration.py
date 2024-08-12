@@ -55,6 +55,10 @@ def get_pcd_transforms(manipulator, read_path):
     search_file = []
     search_file.extend(glob.glob(search_path))
 
+    transforms = []
+    for file in search_file:
+        with open(file, "r") as f:
+            lines = file.readlines()
 
 def filter_by_axis(pcd, threshold, axis):
     """
@@ -73,7 +77,7 @@ def get_pcd_down(pcd, voxel_size):
     
     """
 
-    radius_normal = voxel_size * 2
+    radius_normal = voxel_size * 2.0
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30)
@@ -92,6 +96,18 @@ def get_pcd_fpfh(pcd_down, voxel_size):
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
     )
     return pcd_fpfh
+
+
+def prepare_for_global_registration(scan, model, voxel_size):
+    """
+    
+    """
+
+    scan_down = get_pcd_down(scan, voxel_size)
+    model_down = get_pcd_down(model, voxel_size)
+    scan_fpfh = get_pcd_fpfh(scan_down, voxel_size)
+    model_fpfh = get_pcd_fpfh(model_down, voxel_size)
+    return scan_down, model_down, scan_fpfh, model_fpfh
 
 
 def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, voxel_size):
@@ -113,6 +129,6 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
         ], 
-        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.1)
+        o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999)
     )
     return result

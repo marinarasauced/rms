@@ -7,6 +7,9 @@
   <maintainer email="FirstNameLastName@gmail.com">viperx250</maintainer>
   <license>TODO: License declaration</license>
 
+  <depend>rclpy</depend>
+  <depend>rms_msgs</depend>
+
   <export>
     <build_type>ament_python</build_type>
   </export>
