@@ -215,13 +215,13 @@ def execute_local_registration(scan_down, model_down):
 
     """
 
-    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-09, 1e-09, max_iteration=10000)
+    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-9, 1e-9, max_iteration=10000)
     result = o3d.pipelines.registration.registration_icp(
-        scan_down, 
-        model_down, 
-        0.01, 
-        np.identity(4), 
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        scan_down,
+        model_down,
+        0.01,
+        np.identity(4),
+        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
         criteria
     )
     return result

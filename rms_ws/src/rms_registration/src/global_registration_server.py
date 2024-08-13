@@ -81,6 +81,7 @@ class GlobalRegistrationServer(Node):
             cost = 0
             for _ in range(1):
                 r_ = get_random_rotation_matrix()
+                # r_ = np.eye(4, 4)
                 scan_ = scan__.transform(r_)
                 scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan_, model, self.voxel_size/2.0)
                 result_ransac2_ = execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, self.voxel_size/2.0)
