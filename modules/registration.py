@@ -4,6 +4,8 @@ import glob
 import open3d as o3d
 from os import path
 import numpy as np
+from scipy.spatial.transform import Rotation as R
+
 
 
 def get_pcd_file_paths(manipulator, read_path):
@@ -81,10 +83,40 @@ def filter_by_axis(pcd, threshold, axis):
     return filtered
 
 
-# def filter_out_ground_plane(pcd, threshold, ransac_n=3, iterations=1000):
-#     plane_model, inliers = pcd.segment_plane(
-#         threshold, ransac_n, 0.01, np.array([0, 0, 1]))
-#     )
+def filter_out_ground_plane(pcd, threshold=0.005, ransac_n=3, iterations=10000):
+    """
+    
+    """
+
+    plane_model, inliers = pcd.segment_plane(
+        distance_threshold=threshold,
+        ransac_n=ransac_n,
+        num_iterations=iterations
+    )
+    # [a, b, c, d] = plane_model
+    # ground_plane = pcd.select_by_index(inliers)
+    non_ground_plane = pcd.select_by_index(inliers, invert=True)
+    return non_ground_plane
+
+
+def filter_out_statistical_outliers(pcd, nb_neighbors=20, std_ratio=2.0):
+    """
+    
+    """
+
+    _, ind = pcd.remove_statistical_outlier(nb_neighbors, std_ratio)
+    inlier_cloud = pcd.select_by_index(ind)
+    return inlier_cloud
+
+
+def filter_out_radial_outlier(pcd, nb_points=16, radius=0.05):
+    """
+    
+    """
+
+    _, ind = pcd.remove_radius_outlier(nb_points=16, radius=0.05)
+    inlier_cloud = pcd.select_by_index(ind)
+    return inlier_cloud
 
 
 def get_pcd_down(pcd, voxel_size):
@@ -105,7 +137,7 @@ def get_pcd_fpfh(pcd_down, voxel_size):
     
     """
 
-    radius_feature = voxel_size * 2.0
+    radius_feature = voxel_size * 1.5
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
@@ -139,13 +171,32 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
         True,
         distance_threshold,
         o3d.pipelines.registration.TransformationEstimationPointToPlane(),
-        3, 
+        4, 
         [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.8),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.99),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
         ], 
-        o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999)
+        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999)
     )
+    return result
+
+
+def execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, voxel_size):
+    """
+    
+    """
+
+    distance_threshold = 10 * voxel_size
+    result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
+        scan_down, 
+        model_down,
+        scan_fpfh,
+        model_fpfh,
+        o3d.pipelines.registration.FastGlobalRegistrationOption(
+            maximum_correspondence_distance=distance_threshold,
+            iteration_number = 1000
+            )
+        )
     return result
 
 
@@ -164,14 +215,40 @@ def execute_local_registration(scan_down, model_down):
 
     """
 
-    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-09, 1e-09, 5000)
+    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-09, 1e-09, max_iteration=10000)
     result = o3d.pipelines.registration.registration_icp(
         scan_down, 
         model_down, 
-        0.1, 
+        0.01, 
         np.identity(4), 
-        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
         criteria
     )
     return result
 
+
+def get_random_rotation_matrix():
+    """
+    
+    """
+
+    r = R.random()
+    rotation_matrix_3x3 = r.as_matrix()
+    rotation_matrix_4x4 = np.eye(4)
+    rotation_matrix_4x4[:3, :3] = rotation_matrix_3x3
+    return rotation_matrix_4x4
+
+
+def count_nearest_neigbors(scan, model, threshold):
+    """
+    
+    """
+
+    target_kd_tree = o3d.geometry.KDTreeFlann(model)
+    counter = 0
+    for point in scan.points:
+        point = np.asarray(point)
+        [k, idx, sqd] = target_kd_tree.search_radius_vector_3d(point, threshold)
+        if k > 0:
+            counter += 1
+    return counter
