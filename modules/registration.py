@@ -137,10 +137,10 @@ def get_pcd_fpfh(pcd_down, voxel_size):
     
     """
 
-    radius_feature = voxel_size * 1.5
+    radius_feature = voxel_size * 10.0
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=200)
     )
     return pcd_fpfh
 
@@ -162,21 +162,21 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
     
     """
 
-    distance_threshold = 1.5 * voxel_size
+    distance_threshold = 5.0 * voxel_size
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
         scan_down, 
         model_down, 
         scan_fpfh, 
         model_fpfh, 
-        True,
+        False,
         distance_threshold,
-        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
         4, 
         [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.99),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
         ], 
-        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999)
+        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 500)
     )
     return result
 
@@ -186,7 +186,7 @@ def execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpf
     
     """
 
-    distance_threshold = 10 * voxel_size
+    distance_threshold = 0.5 * voxel_size
     result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
         scan_down, 
         model_down,
@@ -194,10 +194,52 @@ def execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpf
         model_fpfh,
         o3d.pipelines.registration.FastGlobalRegistrationOption(
             maximum_correspondence_distance=distance_threshold,
-            iteration_number = 1000
+            iteration_number = 10000
             )
         )
     return result
+
+
+def execute_pairwise_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, config):
+    """
+    
+    """
+
+    threshold = config["voxel_size"] * 1.4
+    if config["global_registration"] == "fgr":
+        result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
+            scan_down,
+            model_down,
+            scan_fpfh,
+            model_fpfh,
+            o3d.pipelines.registration.FastGlobalRegistrationOption(
+                maximum_correspondence_distance=threshold
+            )
+        )
+    if config["global_registration"] == "ransac":
+        result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+            scan_down,
+            model_down,
+            scan_fpfh,
+            model_fpfh,
+            False,
+            threshold,
+            o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+            4,
+            [
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(threshold),
+            ],
+            o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999)
+        )
+    if (result.transformation.trace() == 4.0):
+        return (False, np.identity(4, 4), np.zeros(6, 6))
+    information = o3d.pipepines.registration.get_information_matrix_from_point_clouds(
+        scan_down, model_down, threshold, result.transformation
+    )
+    if information[5, 5] / min(len(scan_down.points), len(model_down.points)) < 0.3:
+        return (False, np.identity(4), np.zeros((6, 6)))
+    return (True, result.transformation, information)
 
 
 def prepare_for_local_registration(scan, model, voxel_size):
@@ -252,3 +294,22 @@ def count_nearest_neigbors(scan, model, threshold):
         if k > 0:
             counter += 1
     return counter
+
+
+def visualize_correspondences(source, target, correspondences):
+    """
+    
+    """
+
+    source_temp = source.paint_uniform_color([1, 0.706, 0])
+    target_temp = target.paint_uniform_color([0, 0.651, 0.929])
+
+    lines = [[correspondences[i][0], correspondences[i][1]] for i in range(len(correspondences))]
+    line_set = o3d.geometry.LineSet(
+        points=o3d.utility.Vector3dVector(np.vstack((source_temp.points, target_temp.points))),
+        lines=o3d.utility.Vector2iVector(lines),
+    )
+    line_set.colors = o3d.utility.Vector3dVector([[1, 0, 0] for i in range(len(lines))])
+
+    o3d.visualization.draw_geometries([source_temp, target_temp, line_set])
+

@@ -10,7 +10,7 @@ from os import path
 import sys
 
 sys.path.append(path.abspath(path.join(path.dirname(__file__), "../../../../")))
-from modules.registration import get_pcd_file_paths, get_pcd_files, filter_out_ground_plane, filter_out_statistical_outliers, filter_out_radial_outlier, filter_by_axis, prepare_for_global_registration, execute_global_registration, execute_fast_global_registration, prepare_for_local_registration, execute_local_registration, get_random_rotation_matrix, count_nearest_neigbors # type: ignore
+from modules.registration import get_pcd_file_paths, get_pcd_files, filter_out_ground_plane, filter_out_statistical_outliers, filter_out_radial_outlier, filter_by_axis, prepare_for_global_registration, execute_global_registration, execute_fast_global_registration, prepare_for_local_registration, execute_local_registration, get_random_rotation_matrix, count_nearest_neigbors, visualize_correspondences # type: ignore
 
 
 class GlobalRegistrationServer(Node):
@@ -77,40 +77,67 @@ class GlobalRegistrationServer(Node):
         for idx, scan in enumerate(unmerged, start=2):
             self.get_logger().info(f"scan registration ({idx}/{len(unmerged) + 1})")
 
-            scan__ = scan
-            cost = 0
-            for _ in range(1):
-                r_ = get_random_rotation_matrix()
-                # r_ = np.eye(4, 4)
-                scan_ = scan__.transform(r_)
-                scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan_, model, self.voxel_size/2.0)
-                result_ransac2_ = execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, self.voxel_size/2.0)
-                scan_ = scan_.transform(result_ransac2_.transformation)
-                cost_ = count_nearest_neigbors(scan_, model, self.voxel_size)
-                if cost_ > cost:
-                    scan = scan_
-                    cost = cost_
-                    print(cost)
-                      
-            print(count_nearest_neigbors(scan, model, self.voxel_size))
-            o3d.visualization.draw_geometries([scan, model])
+            # scan__ = scan
+            # cost = 0
+            # for _ in range(1):
+            #     r_ = get_random_rotation_matrix()
+            #     r_ = np.eye(4, 4)
+            #     scan_ = scan__.transform(r_)
+            #     scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan_, model, self.voxel_size/2.0)
+            #     result_ransac2_ = execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, self.voxel_size/2.0)
+            #     scan_ = scan_.transform(result_ransac2_.transformation)
+            #     cost_ = count_nearest_neigbors(scan_, model, self.voxel_size)
+            #     if cost_ > cost:
+            #         scan = scan_
+            #         cost = cost_
+            #         print(cost)
+            
+            # correspondences = np.asarray(result_ransac2_.correspondence_set)
+            # visualize_correspondences(scan_down, model_down, correspondences)
 
-            # scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan, model, self.voxel_size/2.0)
-            # result_ransac = execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, self.voxel_size/2.0)
+            # print(count_nearest_neigbors(scan, model, self.voxel_size))
+            # o3d.visualization.draw_geometries([scan, model])
+            # visualize_correspondences(scan_down.transform(result_ransac2_.transformation), model_down, correspondences)
+
+
+            # coarse fgr
+            voxel_coarse = self.voxel_size * 2.0
+            scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan, model, voxel_coarse)
+            result_coarse = execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, voxel_coarse)
+
+            correspondences = np.asarray(result_coarse.correspondence_set)
+            visualize_correspondences(scan_down.transform(result_coarse.transformation), model_down, correspondences)
+
+            # find fgr
+            voxel_fine = self.voxel_size / 4.0
+            scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan, model, voxel_fine)
+            result_fine = execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, voxel_fine)
+
+            correspondences = np.asarray(result_fine.correspondence_set)
+            visualize_correspondences(scan_down.transform(result_fine.transformation), model_down, correspondences)
+
+
+
+
+
+
+
+            # scan_down, model_down, scan_fpfh, model_fpfh = prepare_for_global_registration(scan, model, self.voxel_size/4.0)
+            # result_ransac = execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, self.voxel_size/4.0)
             # scan = scan.transform(result_ransac.transformation)
             # print(result_ransac)
             # o3d.visualization.draw_geometries([scan, model])
 
-            scan_down, model_down = prepare_for_local_registration(scan, model, self.voxel_size/2.0)
-            result_icp = execute_local_registration(scan_down, model_down)
-            scan = scan.transform(result_icp.transformation)
-            print(count_nearest_neigbors(scan, model, self.voxel_size))
-            o3d.visualization.draw_geometries([scan, model])
+            # scan_down, model_down = prepare_for_local_registration(scan, model, self.voxel_size/2.0)
+            # result_icp = execute_local_registration(scan_down, model_down)
+            # scan = scan.transform(result_icp.transformation)
+            # print(count_nearest_neigbors(scan, model, self.voxel_size))
+            # o3d.visualization.draw_geometries([scan, model])
 
-            merged = merged + scan
+            # merged = merged + scan
 
             # o3d.visualization.draw_geometries([scan_down.transform(result.transformation), model_down])
-        o3d.visualization.draw_geometries([merged, model])
+        # o3d.visualization.draw_geometries([merged, model])
 
         return response
 
