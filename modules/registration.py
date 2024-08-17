@@ -296,6 +296,40 @@ def count_nearest_neigbors(scan, model, threshold):
     return counter
 
 
+def filter_points_in_expanded_bbox(scan, model, threshold):
+    """
+    Filters points in pcd1 that fall within the expanded bounding box of pcd2.
+    
+    Parameters:
+    - pcd1: The first point cloud (o3d.geometry.PointCloud).
+    - pcd2: The second point cloud (o3d.geometry.PointCloud).
+    - threshold: The distance to expand the bounding box of pcd2.
+    
+    Returns:
+    - A new point cloud containing all points in pcd1 within the expanded bounding box of pcd2.
+    """
+    
+    # Get the axis-aligned bounding box of pcd2
+    bbox = model.get_axis_aligned_bounding_box()
+    
+    # Expand the bounding box by the threshold in all directions
+    min_bound = bbox.min_bound - threshold
+    max_bound = bbox.max_bound + threshold
+    
+    # Filter points in pcd1 that are within the expanded bounding box
+    filtered_points = []
+    for point in scan.points:
+        if all(min_bound <= point) and all(point <= max_bound):
+            filtered_points.append(point)
+    
+    # Create a new point cloud from the filtered points
+    filtered_pcd = o3d.geometry.PointCloud()
+    if filtered_points:
+        filtered_pcd.points = o3d.utility.Vector3dVector(filtered_points)
+    
+    return filtered_pcd
+
+
 def visualize_correspondences(source, target, correspondences):
     """
     

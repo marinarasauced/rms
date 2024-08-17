@@ -67,12 +67,26 @@ class GlobalRegistrationServer(Node):
             scan_down = scan_down.transform(local_tf)
 
             #
-            self.visualize_pcds(scan, model)
+            # self.visualize_pcds(scan, model)
             merged_with_model = merged_with_model + scan
             merged_without_model = merged_without_model + scan
 
-        visualize_pcd(merged_without_model)
-        self.visualize_pcds(merged_without_model, model)
+        merged_without_model_ = filter_points_in_scaled_bbox(merged_without_model, model, 1.1)
+        # visualize_pcd(merged_without_model)
+        self.visualize_pcds(merged_without_model_, model)
+
+
+        # FILTER OUT POTENTIAL NOISE OF EXTERNAL DEFECTS (DOES NOT ACCOUNT FOR DENTS AND IS BAD BC MAY REMOVE ACTUAL EXTERNAL DEFECTS)
+        potential_true1, potential_defects1 = get_pcd_differences(merged_without_model_, model, 0.0025)
+        self.visualize_pcds_with_potential_defects(potential_true1, model, potential_defects1)
+        visualize_pcd(potential_true1)
+
+        
+        # FILTER BY DETECTING WHAT PARTS OF THE MODEL HAVE NOT BEEN REGISTERED IN THE COMBINED SCAN
+        potential_true2, potential_defects2 = get_pcd_differences(model, merged_without_model_, 0.0025)
+        self.visualize_pcds_with_potential_defects(potential_true2, model, potential_defects2)
+
+
 
         return response
     
@@ -83,9 +97,21 @@ class GlobalRegistrationServer(Node):
         """
         scan_temp = copy.deepcopy(scan)
         model_temp = copy.deepcopy(model)
-        scan_temp.paint_uniform_color([1, 0.706, 0])
-        model_temp.paint_uniform_color([0, 0.651, 0.929])
+        scan_temp.paint_uniform_color([0.9290, 0.6940, 0.1250])
+        model_temp.paint_uniform_color([0, 0.4470, 0.7410])
         o3d.visualization.draw_geometries([scan_temp, model_temp])
+
+    def visualize_pcds_with_potential_defects(self, scan, model, noise):
+        """
+        
+        """
+        scan_temp = copy.deepcopy(scan)
+        model_temp = copy.deepcopy(model)
+        noise_temp = copy.deepcopy(noise)
+        scan_temp.paint_uniform_color([0.9290, 0.6940, 0.1250])
+        model_temp.paint_uniform_color([0, 0.4470, 0.7410])
+        noise_temp.paint_uniform_color([0.8500, 0.3250, 0.0980])
+        o3d.visualization.draw_geometries([scan_temp, model_temp, noise_temp])
 
 
 def main(args=None):    
