@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'rms_registration'
+package_name = 'rms_nodes'
 
 setup(
     name=package_name,
@@ -14,11 +14,12 @@ setup(
     zip_safe=True,
     maintainer='Marina Nelson',
     maintainer_email='marinarasauced@outlook.com',
-    description='ROS2 nodes for RMS PCD registration.',
+    description='ROS2 nodes for RMS PCD collection and registration.',
     license='Private License',
     entry_points={
         'console_scripts': [
-            'register_to_model_server = src.register_to_model:main',
+            'collect_at_viewpoints_server = rms_nodes.collect_at_viewpoints_server:main',
+            'register_to_model_server = rms_nodes.register_to_model_server:main'
         ],
     },
 )

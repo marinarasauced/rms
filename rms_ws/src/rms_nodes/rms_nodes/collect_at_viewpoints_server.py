@@ -2,18 +2,18 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.action import ActionServer
-from rms_msgs.action import PCDCollection
+from sensor_msgs.msg import PointCloud2
+from rms_msgs.srv import PCDCollection
 
 from os import path
 import sys
 
 sys.path.append(path.abspath(path.join(path.dirname(__file__), "../../../../")))
 
-# from modules.collection import get_viewpoints
+from modules.collection import *
 
 
-class PCDCollectionServer(Node):
+class ViewpointCollectionServer(Node):
     """
     
     """
@@ -21,20 +21,27 @@ class PCDCollectionServer(Node):
         """
         
         """
-        super().__init__("pcd_collection_server")
-        self.action = ActionServer(
-            self,
+        super().__init__("viewpoint_collection_server")
+        self._collection_server = self.create_service(
             PCDCollection,
             "viewpoint_collection",
-            self.execute_callback
+            self._execute_callback
         )
-    
+   
 
-    def execute_callback(self, goal_handle):
+    def _execute_callback(self, request, response):
         """
         
         """
-        self.get_logger().info("executing goal")
+        manipulator = request.manipulator
+
+
+        # self._pcd_subscription = self.create_subscription(
+        #     PointCloud2,
+        #     f"/{manipulator}/camera/depth/color/points",
+        #     self._pcd_callback,
+        #     10
+        # )
 
         # feedback_handle = PCDCollection.Feedback()
         # feedback_handle.progress = 0.0
@@ -46,21 +53,20 @@ class PCDCollectionServer(Node):
         # viewpoints = get_viewpoints(read_path)
 
         #
-        goal_handle.succeed()
-        result_handle = PCDCollection.Result()
-        return result_handle
-
-
-def main(args=None):
-    """
+        return response
     
-    """
+
+    def _pcd_callback(self, msg):
+        pass
+
+
+def main(args=None):    
     try:
         rclpy.init(args=args)
-        node = PCDCollectionServer()
+        node = ViewpointCollectionServer()
         rclpy.spin(node)
-    except Exception as e:
-        node.get_logger().error(f"{e}")
+    except KeyboardInterrupt:
+        node.get_logger().info("keyboard interrupt, shutting down ...")
     finally:
         node.destroy_node()
         if rclpy.ok():

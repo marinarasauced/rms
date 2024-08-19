@@ -5,7 +5,6 @@ from rclpy.node import Node
 from rms_msgs.srv import PCDRegistration
 
 import copy
-import numpy as np
 import open3d as o3d
 from os import path
 import sys
@@ -26,10 +25,14 @@ class GlobalRegistrationServer(Node):
         super().__init__("global_registration_server")
         self.declare_parameter("voxel_size", 0.0075)
         self.voxel_size = self.get_parameter("voxel_size").get_parameter_value().double_value
-        self.srv = self.create_service(PCDRegistration, "global_registration", self.execute_callback)
+        self._registration_server = self.create_service(
+            PCDRegistration, 
+            "global_registration", 
+            self._execute_callback
+        )
 
 
-    def execute_callback(self, request, response):
+    def _execute_callback(self, request, response):
         """
         
         """
@@ -79,7 +82,7 @@ class GlobalRegistrationServer(Node):
         # FILTER OUT POTENTIAL NOISE OF EXTERNAL DEFECTS (DOES NOT ACCOUNT FOR DENTS AND IS BAD BC MAY REMOVE ACTUAL EXTERNAL DEFECTS)
         potential_true1, potential_defects1 = get_pcd_differences(merged_without_model_, model, 0.0025)
         self.visualize_pcds_with_potential_defects(potential_true1, model, potential_defects1)
-        visualize_pcd(potential_true1)
+        self.visualize_pcd(potential_true1)
 
         
         # FILTER BY DETECTING WHAT PARTS OF THE MODEL HAVE NOT BEEN REGISTERED IN THE COMBINED SCAN
@@ -91,6 +94,13 @@ class GlobalRegistrationServer(Node):
         return response
     
 
+    def visualize_pcd(self, scan):
+        """
+        
+        """
+        o3d.visualization.draw_geometries([scan])
+
+
     def visualize_pcds(self, scan, model):
         """
         
@@ -100,6 +110,7 @@ class GlobalRegistrationServer(Node):
         scan_temp.paint_uniform_color([0.9290, 0.6940, 0.1250])
         model_temp.paint_uniform_color([0, 0.4470, 0.7410])
         o3d.visualization.draw_geometries([scan_temp, model_temp])
+
 
     def visualize_pcds_with_potential_defects(self, scan, model, noise):
         """

@@ -229,12 +229,3 @@ def get_pcd_differences(source, target, distance_threshold):
         match_pcd_.points = o3d.utility.Vector3dVector(match_pcd)
     return match_pcd_, difference_pcd_
 
-
-def visualize_pcd(pcd):
-    """
-    
-    """
-    # pcd_ = copy.deepcopy(pcd)
-    # pcd_.paint_uniform_color([0.5, 0.5, 0.5])
-    # o3d.visualization.draw_geometries([pcd_])
-    o3d.visualization.draw_geometries([pcd])

@@ -1,0 +1,14 @@
+# PCDCollection.srv
+
+# request definition
+# this section defines the inputs necessary to complete the service
+
+string manipulator
+string read_path
+
+---
+
+# response definition
+# this section defines the outputs of the completed service
+
+string scans_path

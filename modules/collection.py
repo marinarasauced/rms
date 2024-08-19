@@ -11,4 +11,5 @@ def get_viewpoints(read_path):
     data = []
     for line in lines:
         values = [float(x) for x in line.strip.split(",")]
-    return np.asarray(values, dtype=str)
+        data.append(values)
+    return np.asarray(data)
