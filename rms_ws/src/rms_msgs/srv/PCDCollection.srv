@@ -5,10 +5,11 @@
 
 string manipulator
 string read_path
+string write_path
 
 ---
 
 # response definition
 # this section defines the outputs of the completed service
 
-string scans_path
+bool success

@@ -81,7 +81,7 @@ def load_config_json(name):
     @return robot_model: The model, host address, username, and password of the manipulator.
     """
 
-    path = os.path.join(os.path.expanduser("~/rms_ros/src/rms_ros/config"), name)
+    path = os.path.join(os.path.expanduser("~/rms/config/"), name)
     with open(path, "r") as file:
         data = json.load(file)
     robot_model = data["robot_model"]
@@ -110,7 +110,7 @@ def move_vx_bot_to_viewpoint(bot, x, y, z):
     """
     Move the manipulator to the current viewpoint.
     """
-    dx = 0.7 - x
+    dx = 0.8 - x
     dy = 0.0 # dy = 0.0 - y
     dz = 0.0 - z
     pitch = - np.arctan2(dz, np.sqrt(dx**2 + dy**2))
@@ -170,7 +170,7 @@ def get_primary_write_dir(configuration):
     """
 
     date = datetime.datetime.now().strftime("%Y-%m-%d")
-    scan_dir = os.path.expanduser(f"~/rms_ros/src/rms_ros/scans/{date}/")
+    scan_dir = os.path.expanduser(f"~/rms/pointclouds/scans/{date}/")
     time = datetime.datetime.now().strftime("%H:%M:%S")
     if not os.path.exists(scan_dir):
         path = os.path.join(scan_dir, f"C{configuration}_0001_{time}")
@@ -206,6 +206,6 @@ def get_secondary_write_dir(secondary):
     @return: The path to the PCD write directory.
     """
 
-    return f"/home/{secondary.user}/rms_ros/src/rms_ros/scans/"
+    return f"/home/{secondary.user}/rms/scans/"
 
 

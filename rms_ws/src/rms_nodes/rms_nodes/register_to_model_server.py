@@ -61,6 +61,7 @@ class GlobalRegistrationServer(Node):
 
             scan = scan.transform(global_tf)
             scan_down = scan_down.transform(global_tf)
+            self.visualize_pcds(scan, model)
 
             # locally register object fragments to model
             result_local = execute_local_registration(scan, model, self.voxel_size)
@@ -68,6 +69,7 @@ class GlobalRegistrationServer(Node):
 
             scan = scan.transform(local_tf)
             scan_down = scan_down.transform(local_tf)
+            self.visualize_pcds(scan, model)
 
             #
             # self.visualize_pcds(scan, model)
