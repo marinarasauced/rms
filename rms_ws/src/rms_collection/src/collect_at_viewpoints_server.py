@@ -10,7 +10,7 @@ import sys
 
 sys.path.append(path.abspath(path.join(path.dirname(__file__), "../../../../")))
 
-from modules.collection import get_viewpoints # type: ignore
+# from modules.collection import get_viewpoints
 
 
 class PCDCollectionServer(Node):
@@ -25,7 +25,7 @@ class PCDCollectionServer(Node):
         self.action = ActionServer(
             self,
             PCDCollection,
-            "pdc_collection",
+            "viewpoint_collection",
             self.execute_callback
         )
     
@@ -36,14 +36,14 @@ class PCDCollectionServer(Node):
         """
         self.get_logger().info("executing goal")
 
-        feedback_handle = PCDCollection.Feedback()
-        feedback_handle.progress = 0.0
-        manipulator = goal_handle.request.manipulator
-        read_path = goal_handle.request.read_path
-        write_directory = goal_handle.request.write_directory
+        # feedback_handle = PCDCollection.Feedback()
+        # feedback_handle.progress = 0.0
+        # manipulator = goal_handle.request.manipulator
+        # read_path = goal_handle.request.read_path
+        # write_directory = goal_handle.request.write_directory
 
-        # get viewpoints
-        viewpoints = get_viewpoints(read_path)
+        # # get viewpoints
+        # viewpoints = get_viewpoints(read_path)
 
         #
         goal_handle.succeed()
@@ -59,8 +59,8 @@ def main(args=None):
         rclpy.init(args=args)
         node = PCDCollectionServer()
         rclpy.spin(node)
-    except:
-        pass
+    except Exception as e:
+        node.get_logger().error(f"{e}")
     finally:
         node.destroy_node()
         if rclpy.ok():

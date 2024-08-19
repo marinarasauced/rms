@@ -12,7 +12,7 @@ import sys
 
 sys.path.append(path.abspath(path.join(path.dirname(__file__), "../../../../")))
 
-from modules.registration2 import *
+from modules.registration import *
 
 
 class GlobalRegistrationServer(Node):

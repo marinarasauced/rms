@@ -3,9 +3,9 @@
 <package format="3">
   <name>rms_registration</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="FirstNameLastName@gmail.com">viperx250</maintainer>
-  <license>TODO: License declaration</license>
+  <description>ROS2 nodes for RMS PCD registration.</description>
+  <maintainer email="marinarasauced@outlook.com">marinarasauced</maintainer>
+  <license>Private License</license>
 
   <depend>rclpy</depend>
   <depend>rms_msgs</depend>

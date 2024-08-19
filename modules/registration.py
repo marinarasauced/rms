@@ -1,148 +1,115 @@
 
 import copy
 import glob
+import numpy as np
 import open3d as o3d
 from os import path
-import numpy as np
-from scipy.spatial.transform import Rotation as R
 
 
-
-def get_pcd_file_paths(manipulator, read_path):
-    """
-    Get the absolute paths to all PCD scans in a directory for a given manipulator.
-
-    Args:
-        manipulator (string): The abbreviated name of the manipulator; e.g., vx250 or vx300s
-        read_path (string): The absolute path of the directory containing the PCD scans.
-
-    Returns:
-        list[str]: A list of the absolute paths of the PCD scans in the read_path.
-    """
-
-    search_path = path.join(read_path, f"{manipulator}_*.pcd")
-    search_files = []
-    search_files.extend(glob.glob(search_path))
-    return search_files
-
-
-def get_pcd_files(read_paths):
-    """
-    Get the file content of all PCD scans in the absolute file paths.
-
-    Args:
-        read_paths (list[str]): A list of the absolute paths of PCD scans.
-
-    Returns:
-        list [o3d.geometry.PointCloud]: A list of the file contents of the PCD files in the absolute file paths.
-    """
-
-    pcd_files = [o3d.io.read_point_cloud(path) for path in read_paths]
-    return pcd_files
-
-
-def get_pcd_transforms(manipulator, read_path):
-    """
-    Get the transforms of the manipulator base to the location of the PCD scans for the scans in the read path.
-
-    Args:
-        manipulator (string): The abbreviated name of the manipulator; e.g., vx250 or vx300s
-        read_path (string): The absolute path of the directory containing the PCD scans.
-
-    Returns:
-        
-    """
-
-    search_path = path.join(read_path, f"{manipulator}_viewpoints.txt")
-    search_file = []
-    search_file.extend(glob.glob(search_path))
-
-    transforms = []
-    with open(search_file[0], "r") as file:
-        lines = file.readlines()
-        lines_ = [np.fromstring(line.strip(), sep=",") for line in lines]
-        for line in lines_:
-            translation = np.array([line[1], line[2], line[3]])
-            rotation = np.array([line[4], line[5], line[6], line[7]])
-            transform = np.identity(4)
-            transform[0:3, 3] = translation
-            transform[0:3, 0:3] = o3d.geometry.get_rotation_matrix_from_quaternion(rotation)
-            transforms.append(transform)
-    return transforms
-
-
-def filter_by_axis(pcd, threshold, axis):
+def get_pcd_file(read_path):
     """
     
     """
+    read_file = o3d.io.read_point_cloud(read_path)
+    return read_file
 
 
+def get_pcd_files(manipulator, read_path):
+    """
+    
+    """
+    search_path = path.join(read_path, f"{manipulator}_*.pcd")
+    read_paths = glob.glob(search_path)
+    read_files = [o3d.io.read_point_cloud(path) for path in read_paths]
+    return read_files
+
+
+def filter_pcd_by_axis(pcd, min_value, max_value, axis):
+    """
+    Filters the input point cloud by retaining only the points whose coordinates along the specified axis
+    fall within the range [min_value, max_value].
+
+    Parameters:
+    -----------
+    pcd : open3d.geometry.PointCloud
+        The input point cloud to be filtered.
+    min_value : float
+        The minimum value along the specified axis for the points to be retained.
+    max_value : float
+        The maximum value along the specified axis for the points to be retained.
+    axis : int
+        The axis along which to filter the points (0 for x-axis, 1 for y-axis, 2 for z-axis).
+
+    Returns:
+    --------
+    filtered : open3d.geometry.PointCloud
+        The filtered point cloud with points only within the specified range along the given axis.
+    """
     array = np.asarray(pcd.points)
-    indices = np.where(np.abs(array[:, axis]) < threshold)
+    indices = np.where((array[:, axis] >= min_value) & (array[:, axis] <= max_value))
     filtered = pcd.select_by_index(indices[0])
     return filtered
 
 
-def filter_out_ground_plane(pcd, threshold=0.005, ransac_n=3, iterations=10000):
+def filter_pcd_by_removing_ground_plane(pcd,  distance_threshold=0.01, ransac_n=3, num_iterations=10000):
     """
     
     """
+    _, inliers = pcd.segment_plane(distance_threshold, ransac_n, num_iterations)
+    inlier_cloud = pcd.select_by_index(inliers, invert=True)
+    return inlier_cloud
 
-    plane_model, inliers = pcd.segment_plane(
-        distance_threshold=threshold,
-        ransac_n=ransac_n,
-        num_iterations=iterations
+
+def filter_pcd_by_removing_radial_outliers(pcd, nb_points=16, radius=0.01):
+    """
+    
+    """
+    _, inliers = pcd.remove_radius_outlier(nb_points, radius)
+    inlier_cloud = pcd.select_by_index(inliers)
+    return inlier_cloud
+
+
+def filter_pcd_by_removing_statistical_outliers(pcd, nb_neighbors=20, std_ratio=3.0):
+    """
+
+    """
+    _, inliers = pcd.remove_statistical_outlier(nb_neighbors, std_ratio)
+    inlier_cloud = pcd.select_by_index(inliers)
+    return inlier_cloud
+
+
+def estimate_point_cloud_normals(pcd, voxel_size):
+    """
+    
+    """
+    pcd.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(
+            radius=voxel_size * 2,
+            max_nn=30
+        )
     )
-    # [a, b, c, d] = plane_model
-    # ground_plane = pcd.select_by_index(inliers)
-    non_ground_plane = pcd.select_by_index(inliers, invert=True)
-    return non_ground_plane
+    return pcd
 
 
-def filter_out_statistical_outliers(pcd, nb_neighbors=20, std_ratio=2.0):
+def preprocess_point_cloud(pcd, voxel_size):
     """
     
     """
-
-    _, ind = pcd.remove_statistical_outlier(nb_neighbors, std_ratio)
-    inlier_cloud = pcd.select_by_index(ind)
-    return inlier_cloud
-
-
-def filter_out_radial_outlier(pcd, nb_points=16, radius=0.05):
-    """
-    
-    """
-
-    _, ind = pcd.remove_radius_outlier(nb_points=16, radius=0.05)
-    inlier_cloud = pcd.select_by_index(ind)
-    return inlier_cloud
-
-
-def get_pcd_down(pcd, voxel_size):
-    """
-    
-    """
-
-    radius_normal = voxel_size * 2.0
     pcd_down = pcd.voxel_down_sample(voxel_size)
+    radius_normal = voxel_size * 2
     pcd_down.estimate_normals(
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30)
+        o3d.geometry.KDTreeSearchParamHybrid(
+            radius=radius_normal, max_nn=30
+        )
     )
-    return pcd_down
-
-
-def get_pcd_fpfh(pcd_down, voxel_size):
-    """
-    
-    """
-
-    radius_feature = voxel_size * 10.0
+    radius_feature = voxel_size * 5
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
-        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=200)
+        o3d.geometry.KDTreeSearchParamHybrid(
+            radius=radius_feature, max_nn=100
+        )
     )
-    return pcd_fpfh
+    return pcd_down, pcd_fpfh
 
 
 def prepare_for_global_registration(scan, model, voxel_size):
@@ -150,10 +117,8 @@ def prepare_for_global_registration(scan, model, voxel_size):
     
     """
 
-    scan_down = get_pcd_down(scan, voxel_size)
-    model_down = get_pcd_down(model, voxel_size)
-    scan_fpfh = get_pcd_fpfh(scan_down, voxel_size)
-    model_fpfh = get_pcd_fpfh(model_down, voxel_size)
+    scan_down, scan_fpfh = preprocess_point_cloud(scan, voxel_size)
+    model_down, model_fpfh = preprocess_point_cloud(model, voxel_size)
     return scan_down, model_down, scan_fpfh, model_fpfh
 
 
@@ -161,189 +126,115 @@ def execute_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, vo
     """
     
     """
-
-    distance_threshold = 5.0 * voxel_size
+    distance_threshold = voxel_size * 1.5
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-        scan_down, 
-        model_down, 
-        scan_fpfh, 
-        model_fpfh, 
-        False,
-        distance_threshold,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-        4, 
-        [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(distance_threshold)
-        ], 
-        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 500)
-    )
-    return result
-
-
-def execute_fast_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, voxel_size):
-    """
-    
-    """
-
-    distance_threshold = 0.5 * voxel_size
-    result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
-        scan_down, 
+        scan_down,
         model_down,
         scan_fpfh,
         model_fpfh,
-        o3d.pipelines.registration.FastGlobalRegistrationOption(
-            maximum_correspondence_distance=distance_threshold,
-            iteration_number = 10000
-            )
-        )
+        True,
+        distance_threshold,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        3, 
+        [
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                0.5),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                distance_threshold)
+        ], 
+        o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 1000))
     return result
 
 
-def execute_pairwise_global_registration(scan_down, model_down, scan_fpfh, model_fpfh, config):
+def execute_local_registration(scan_down, model_down, voxel_size):
     """
     
     """
-
-    threshold = config["voxel_size"] * 1.4
-    if config["global_registration"] == "fgr":
-        result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
-            scan_down,
-            model_down,
-            scan_fpfh,
-            model_fpfh,
-            o3d.pipelines.registration.FastGlobalRegistrationOption(
-                maximum_correspondence_distance=threshold
-            )
-        )
-    if config["global_registration"] == "ransac":
-        result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            scan_down,
-            model_down,
-            scan_fpfh,
-            model_fpfh,
-            False,
-            threshold,
-            o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-            4,
-            [
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(threshold),
-            ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999)
-        )
-    if (result.transformation.trace() == 4.0):
-        return (False, np.identity(4, 4), np.zeros(6, 6))
-    information = o3d.pipepines.registration.get_information_matrix_from_point_clouds(
-        scan_down, model_down, threshold, result.transformation
-    )
-    if information[5, 5] / min(len(scan_down.points), len(model_down.points)) < 0.3:
-        return (False, np.identity(4), np.zeros((6, 6)))
-    return (True, result.transformation, information)
-
-
-def prepare_for_local_registration(scan, model, voxel_size):
-    """
-    
-    """
-
-    scan_down = get_pcd_down(scan, voxel_size)
-    model_down = get_pcd_down(model, voxel_size)
-    return scan_down, model_down
-
-
-def execute_local_registration(scan_down, model_down):
-    """
-
-    """
-
-    criteria = o3d.pipelines.registration.ICPConvergenceCriteria(1e-9, 1e-9, max_iteration=10000)
+    distance_threshold = voxel_size * 1
     result = o3d.pipelines.registration.registration_icp(
         scan_down,
         model_down,
-        0.01,
+        distance_threshold,
         np.identity(4),
-        o3d.pipelines.registration.TransformationEstimationPointToPlane(),
-        criteria
+        o3d.pipelines.registration.TransformationEstimationPointToPlane()
     )
     return result
 
 
-def get_random_rotation_matrix():
+
+def filter_points_in_scaled_bbox(pcd1, pcd2, scale_factor):
     """
-    
-    """
-
-    r = R.random()
-    rotation_matrix_3x3 = r.as_matrix()
-    rotation_matrix_4x4 = np.eye(4)
-    rotation_matrix_4x4[:3, :3] = rotation_matrix_3x3
-    return rotation_matrix_4x4
-
-
-def count_nearest_neigbors(scan, model, threshold):
-    """
-    
-    """
-
-    target_kd_tree = o3d.geometry.KDTreeFlann(model)
-    counter = 0
-    for point in scan.points:
-        point = np.asarray(point)
-        [k, idx, sqd] = target_kd_tree.search_radius_vector_3d(point, threshold)
-        if k > 0:
-            counter += 1
-    return counter
-
-
-def filter_points_in_expanded_bbox(scan, model, threshold):
-    """
-    Filters points in pcd1 that fall within the expanded bounding box of pcd2.
+    Filters points in pcd1 that fall within the scaled bounding box of pcd2.
     
     Parameters:
     - pcd1: The first point cloud (o3d.geometry.PointCloud).
     - pcd2: The second point cloud (o3d.geometry.PointCloud).
-    - threshold: The distance to expand the bounding box of pcd2.
+    - scale_factor: The factor by which to scale the bounding box of pcd2.
     
     Returns:
-    - A new point cloud containing all points in pcd1 within the expanded bounding box of pcd2.
+    - A new point cloud containing all points in pcd1 within the scaled bounding box of pcd2.
     """
     
     # Get the axis-aligned bounding box of pcd2
-    bbox = model.get_axis_aligned_bounding_box()
+    bbox = pcd2.get_axis_aligned_bounding_box()
     
-    # Expand the bounding box by the threshold in all directions
-    min_bound = bbox.min_bound - threshold
-    max_bound = bbox.max_bound + threshold
+    # Calculate the center of the bounding box
+    center = bbox.get_center()
     
-    # Filter points in pcd1 that are within the expanded bounding box
+    # Calculate the size of the bounding box (range in each dimension)
+    bbox_size = bbox.get_extent()
+    
+    # Scale the bounding box size
+    scaled_min_bound = center - (bbox_size * scale_factor / 2)
+    scaled_max_bound = center + (bbox_size * scale_factor / 2)
+    
+    # Convert bounds to numpy arrays for element-wise comparison
+    scaled_min_bound = np.asarray(scaled_min_bound)
+    scaled_max_bound = np.asarray(scaled_max_bound)
+    
+    # Filter points in pcd1 that are within the scaled bounding box
     filtered_points = []
-    for point in scan.points:
-        if all(min_bound <= point) and all(point <= max_bound):
-            filtered_points.append(point)
+    for point in pcd1.points:
+        point_array = np.asarray(point)
+        if np.all(point_array >= scaled_min_bound) and np.all(point_array <= scaled_max_bound):
+            filtered_points.append(point_array)
     
     # Create a new point cloud from the filtered points
     filtered_pcd = o3d.geometry.PointCloud()
     if filtered_points:
-        filtered_pcd.points = o3d.utility.Vector3dVector(filtered_points)
+        filtered_pcd.points = o3d.utility.Vector3dVector(np.array(filtered_points))
     
     return filtered_pcd
 
 
-def visualize_correspondences(source, target, correspondences):
+def get_pcd_differences(source, target, distance_threshold):
+    """
+    Identify and return the points in source that DO NOT have at least one neighbor in the target point cloud within a given distance threshold.
+    """
+    target_kd_tree = o3d.geometry.KDTreeFlann(target)
+    difference_pcd = []
+    match_pcd = []
+    for point in source.points:
+        points = np.asarray(point)
+        [k, _, _] = target_kd_tree.search_radius_vector_3d(points, distance_threshold)
+        if k > 0:
+            match_pcd.append(point)
+        else:
+            difference_pcd.append(point)
+    difference_pcd_ = o3d.geometry.PointCloud()
+    match_pcd_ = o3d.geometry.PointCloud()
+    if difference_pcd:
+        difference_pcd_.points = o3d.utility.Vector3dVector(difference_pcd)
+    if match_pcd:
+        match_pcd_.points = o3d.utility.Vector3dVector(match_pcd)
+    return match_pcd_, difference_pcd_
+
+
+def visualize_pcd(pcd):
     """
     
     """
-
-    source_temp = source.paint_uniform_color([1, 0.706, 0])
-    target_temp = target.paint_uniform_color([0, 0.651, 0.929])
-
-    lines = [[correspondences[i][0], correspondences[i][1]] for i in range(len(correspondences))]
-    line_set = o3d.geometry.LineSet(
-        points=o3d.utility.Vector3dVector(np.vstack((source_temp.points, target_temp.points))),
-        lines=o3d.utility.Vector2iVector(lines),
-    )
-    line_set.colors = o3d.utility.Vector3dVector([[1, 0, 0] for i in range(len(lines))])
-
-    o3d.visualization.draw_geometries([source_temp, target_temp, line_set])
-
+    # pcd_ = copy.deepcopy(pcd)
+    # pcd_.paint_uniform_color([0.5, 0.5, 0.5])
+    # o3d.visualization.draw_geometries([pcd_])
+    o3d.visualization.draw_geometries([pcd])

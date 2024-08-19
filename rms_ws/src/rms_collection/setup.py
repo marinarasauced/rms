@@ -12,13 +12,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='viperx250',
-    maintainer_email='FirstNameLastName@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    maintainer='Marina Nelson',
+    maintainer_email='marinarasauced@outlook.com',
+    description='ROS2 nodes for RMS PCD collection.',
+    license='Private License',
     entry_points={
         'console_scripts': [
-            'collection_server = src.collection_server:main',
+            'collect_at_viewpoints_server = src.collect_at_viewpoints_server:main',
         ],
     },
 )
