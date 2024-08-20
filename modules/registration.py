@@ -207,7 +207,7 @@ def filter_points_in_scaled_bbox(pcd1, pcd2, scale_factor):
     return filtered_pcd
 
 
-def get_pcd_differences(source, target, distance_threshold):
+def get_pcd_differences(source, target, distance_threshold=0.0025):
     """
     Identify and return the points in source that DO NOT have at least one neighbor in the target point cloud within a given distance threshold.
     """
@@ -229,3 +229,13 @@ def get_pcd_differences(source, target, distance_threshold):
         match_pcd_.points = o3d.utility.Vector3dVector(match_pcd)
     return match_pcd_, difference_pcd_
 
+
+def get_alignment_confidence(scan, model, distance_threshold):
+    """
+    
+    """
+    overlap, _ = get_pcd_differences(scan, model, distance_threshold)
+    metric = len(overlap.points) / len(scan.points)
+    return metric
+
+    

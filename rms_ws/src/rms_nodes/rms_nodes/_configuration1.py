@@ -103,6 +103,7 @@ class RMSConfiguration1(Node):
         Register point clouds by calling the PCDRegistration service.
         """
         request = PCDRegistration.Request()
+        request.manipulators = [self.primary.robot_model]
         request.scans_path = self.write_path
         request.model_path = self.path2pcd
 

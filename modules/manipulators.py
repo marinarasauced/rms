@@ -110,7 +110,7 @@ def move_vx_bot_to_viewpoint(bot, x, y, z):
     """
     Move the manipulator to the current viewpoint.
     """
-    dx = 0.8 - x
+    dx = 0.7 - x
     dy = 0.0 # dy = 0.0 - y
     dz = 0.0 - z
     pitch = - np.arctan2(dz, np.sqrt(dx**2 + dy**2))
