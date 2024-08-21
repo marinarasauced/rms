@@ -25,7 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'save_pointclouds = src.save_pointclouds:main',
-            'collect_pointclouds_at_viewpoints = src.collect_pointclouds_at_viewpoints:main'
+            'collect_pointclouds_at_viewpoints = src.collect_pointclouds_at_viewpoints:main',
+            'register_pointclouds_to_model = src.register_pointclouds_to_model:main',
         ],
     },
 )

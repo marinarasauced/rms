@@ -3,7 +3,6 @@
 import rclpy
 from rclpy.action import ActionServer
 from rclpy.node import Node
-
 from geometry_msgs.msg import Point
 from rms_msgs.action import PointCloudCollection
 from rms_msgs.msg import PointCloudStamped

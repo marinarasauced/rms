@@ -1,0 +1,23 @@
+# PointCloudRegistration.action
+# An action for managing and processing pointcloud registration between two files.
+
+# Goal definition
+# Specifies the file paths for the source and target pointcloud data.
+
+string scans_path    # Path to the source pointcloud scan files (e.g., from home dir to scans)
+string model_path    # Path to the target pointcloud file (e.g., from home dir to models/model.pcd)
+
+---
+
+# Feedback definition
+# Provides updates on the progress of the registration process.
+
+float32 successes
+float32 failures
+
+---
+
+# Result definition
+# Contains the result of the pointcloud registration action.
+
+float32 success            # Boolean indicating whether the registration was successful

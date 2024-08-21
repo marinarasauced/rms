@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PointCloudStamped.msg"
   "msg/ViewPoint.msg"
   "action/PointCloudCollection.action"
+  "action/PointCloudRegistration.action"
   DEPENDENCIES geometry_msgs sensor_msgs
 )
 
