@@ -1,0 +1,22 @@
+# PointCloudCollection.action
+# An action for managing and processing pointcloud data.
+
+# Goal definition
+# Specifies the viewpoints and file path for processing and collection.
+# The goal for this action includes a list of viewpoints and a file path for storing results.
+ViewPoint[] viewpoints     # List of viewpoints to be processed or considered
+string file_path           # Path to save the pointcloud data or results
+
+---
+
+# Feedback definition
+# Provides updates on the progress of the action execution.
+
+float32 progress           # Current progress of the action, e.g., percentage of completion or task advancement
+
+---
+
+# Result definition
+# Contains the result of the action execution.
+
+float32 success            # Success value indicating the outcome of the action, e.g., completion status or processing result
