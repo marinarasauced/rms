@@ -2,12 +2,14 @@
 
 import rclpy
 from rclpy.action import ActionServer, GoalResponse, CancelResponse
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from geometry_msgs.msg import Point
 from rms_msgs.action import PointCloudCollection
 from rms_msgs.msg import PointCloudStamped
 from sensor_msgs.msg import PointCloud2
 
+import asyncio
 import numpy as np
 from os import path
 import sys
@@ -81,7 +83,6 @@ class PointCloudCollectionServer(Node):
             execute_callback=self._collection_execute,
             goal_callback=self._handle_goal,
             cancel_callback=self._handle_cancel,
-            result_timeout=1
         )
 
         self.get_logger().info("ready to collect pointclouds")
@@ -167,8 +168,8 @@ class PointCloudCollectionServer(Node):
 
                 while self.pointcloud is None:
                     toc = time.time()
-                    rclpy.spin_once(self, timeout_sec=0.1)
-                    if toc - tic > 5.0:
+                    time.sleep(0.1)
+                    if toc - tic > self.wait_duration:
                         self.get_logger().info("timed out waiting for pointcloud")
                         break
 
@@ -182,8 +183,8 @@ class PointCloudCollectionServer(Node):
         except Exception as e:
             self.get_logger().error(f"error during goal execution: {e}")
 
-            goal_handle.abort()
             result.success = False
+            goal_handle.abort()
 
         finally:
             time.sleep(1)
@@ -196,14 +197,6 @@ class PointCloudCollectionServer(Node):
         return result
 
 
-    # def destroy_node(self):
-    #     """
-        
-    #     """
-    #     self.bot.shutdown()
-    #     super().destroy_node()
-
-
 def main(args=None):
     """
     
@@ -211,10 +204,14 @@ def main(args=None):
     try:
         rclpy.init(args=args)
         node = PointCloudCollectionServer()
-        rclpy.spin(node)
-    except:
-        pass
+        executor = MultiThreadedExecutor(num_threads=4)
+        executor.add_node(node)
+        try:
+            executor.spin()
+        finally:
+            executor.shutdown()
+    except KeyboardInterrupt:
+        print("keyboard interrupt, shutting down")
     finally:
         node.destroy_node()
-        # if rclpy.ok():
-        #     rclpy.shutdown()
+
