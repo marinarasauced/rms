@@ -3,3 +3,4 @@ rms_ws/build
 rms_ws/install
 rms_ws/log
 __pycache__
+scans/2024-*

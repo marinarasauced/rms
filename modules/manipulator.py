@@ -35,11 +35,16 @@ def move_vx_bot_to_viewpoint(bot, viewpoint, offset, wait_duration):
     """
     
     """
-    tx = offset.x - viewpoint.position.x
-    ty = offset.y - viewpoint.position.y
-    tz = offset.z - viewpoint.position.z
-    ry = np.arctan2(tz, np.sqrt(tx ** 2 + ty ** 2))
-    bot.arm.set_ee_pose_components(x=tx, y=ty, z=tz, pitch=ry)
+    dx = offset.x - viewpoint.position.x
+    dy = offset.y - viewpoint.position.y
+    dz = offset.z - viewpoint.position.z
+    pitch = -np.arctan2(dz, np.sqrt(dx ** 2 + dy ** 2))
+    bot.arm.set_ee_pose_components(
+        x=viewpoint.position.x,
+        y=viewpoint.position.y,
+        z=viewpoint.position.z,
+        pitch=pitch
+    )
     tic = time.time()
     while time.time() < tic + wait_duration:
         pass

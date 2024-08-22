@@ -1,3 +1,5 @@
+from glob import glob
+from os import path
 from setuptools import find_packages, setup
 
 package_name = 'rms_nodes'
@@ -9,6 +11,10 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (
+            path.join("share", package_name, "launch"),
+            glob(path.join("launch", "*launch.[pxy][yma]*")),
+        ),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

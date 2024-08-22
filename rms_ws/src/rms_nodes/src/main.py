@@ -5,7 +5,6 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rms_msgs.action import PointCloudCollection
 
-import asyncio
 from os import path
 import sys
 
@@ -21,11 +20,11 @@ from modules.collection import (
 
 class ReconfigurableManufacturingSystems(Node):
     """
-    
+    Main class for the Reconfigurable Manufacturing Systems (RMS).
     """
     def __init__(self):
         """
-        
+        Initialize the RMS node.
         """
         super().__init__("rms_main")
 
@@ -44,9 +43,9 @@ class ReconfigurableManufacturingSystems(Node):
         self.model_path = get_model_path(rms_path, self.model_name)
 
         self._collection_clients = {}
-        self._collection_results = {}
         self._collection_counter = 0
         self._collection_count = len(self.manipulators)
+
         for manipulator in self.manipulators:
             self._collection_clients[manipulator] = ActionClient(
                 self,
@@ -54,14 +53,13 @@ class ReconfigurableManufacturingSystems(Node):
                 f"/{manipulator}/{self._collection_action}"
             )
 
-        asyncio.run(self._send_collection_goals())
+        # Send goals once all clients are ready
+        self._send_collection_goals()
 
-    
-    async def _send_collection_goals(self):
+    def _send_collection_goals(self):
         """
-        
+        Send goals to all manipulator action servers.
         """
-        send_tasks = []
         for manipulator, client in self._collection_clients.items():
             if not client.wait_for_server(timeout_sec=5.0):
                 self.get_logger().error(f"action server for {manipulator} unavailable")
@@ -71,22 +69,39 @@ class ReconfigurableManufacturingSystems(Node):
             goal.viewpoints = get_viewpoints(self.config_path, manipulator)
             goal.scans_path = self.scans_path
 
+            self.get_logger().info(f"sending goal to {manipulator}")
+
             future = client.send_goal_async(goal)
-            send_tasks.append(self._handle_collection_result(manipulator, future))
+            future.add_done_callback(lambda future, manipulator=manipulator: self._handle_collection_result(manipulator, future))
 
-
-    async def _handle_collection_result(self, manipulator, goal_future):
+    def _handle_collection_result(self, manipulator, future):
         """
         Handles the result of a goal and updates the counter.
         """
-        result_future = await goal_future
-        result = await result_future.result()
+        goal_handle = future.result()
 
-        self.get_logger().info(f"received result from {manipulator}: {result}")
+        if not goal_handle.accepted:
+            self.get_logger().error(f"goal rejected by {manipulator}")
+            return
+
+        self.get_logger().info(f"goal accepted by {manipulator}")
+
+        result_future = goal_handle.get_result_async()
+        result_future.add_done_callback(lambda future, manipulator=manipulator: self._handle_collection_completion(manipulator, future))
+
+
+    def _handle_collection_completion(self, manipulator, future):
+        """
+        Finalizes the collection process and checks if all manipulators are done.
+        """
+        result = future.result().result
+        self.get_logger().info(f"received result from {manipulator}: {result.success}")
 
         self._collection_counter += 1
+
         if self._collection_counter == self._collection_count:
-            self.get_logger().info("done")
+            self.get_logger().info("all manipulators are done")
+            rclpy.shutdown()
 
 
 def main(args=None):
@@ -96,6 +111,7 @@ def main(args=None):
     try:
         rclpy.init(args=args)
         node = ReconfigurableManufacturingSystems()
+        rclpy.spin(node)
     except:
         pass
     finally:

@@ -1,9 +1,7 @@
 
 from rms_msgs.msg import ViewPoint
-from sensor_msgs.msg import PointCloud2
 
 import datetime
-import numpy as np
 import open3d as o3d
 from os import path, makedirs, listdir
 import re
@@ -72,7 +70,7 @@ def get_scans_path(rms_path):
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     time = datetime.datetime.now().strftime("%H:%M:%S")
     scan_path = path.abspath(path.join(rms_path, f"scans/{date}/"))
-    if not check_path(scans_path):
+    if not check_path(scan_path):
         scans_path = path.join(scan_path, f"0001_{time}")
         create_path(scans_path)
         return scans_path
@@ -86,13 +84,13 @@ def get_scans_path(rms_path):
                 numbers.append(match.group(1))
     if numbers:
         index = int(max(numbers)) + 1
-        path = path.join(scan_path, f"{index:04d}_{time}")
-        create_path(path)
-        return path
+        scans_path = path.join(scan_path, f"{index:04d}_{time}")
+        create_path(scans_path)
+        return scans_path
     else:
-        path = path.join(scan_path, f"0001_{time}")
-        create_path(path)
-        return path
+        scans_path = path.join(scan_path, f"0001_{time}")
+        create_path(scans_path)
+        return scans_path
 
 
 def get_model_path(rms_path, model_name):
@@ -131,9 +129,9 @@ def get_viewpoints(config_path, manipulator):
     for line in lines:
         values = [float(x) for x in line.strip().split(",")]
         viewpoint = ViewPoint()
-        viewpoint.position.x = values[0]
-        viewpoint.position.y = values[1]
-        viewpoint.position.z = values[2]
+        viewpoint.position.x = values[1]
+        viewpoint.position.y = values[2]
+        viewpoint.position.z = values[3]
         viewpoint.orientation.x = 0.0
         viewpoint.orientation.y = 0.0
         viewpoint.orientation.z = 0.0

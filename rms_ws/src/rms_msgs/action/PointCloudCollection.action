@@ -9,14 +9,14 @@ string scans_path           # Path to save the pointcloud data or results
 
 ---
 
+# Result definition
+# Contains the result of the action execution.
+
+bool success            # Success value indicating the outcome of the action, e.g., completion status or processing result
+
+---
+
 # Feedback definition
 # Provides updates on the progress of the action execution.
 
 float32 progress           # Current progress of the action, e.g., percentage of completion or task advancement
-
----
-
-# Result definition
-# Contains the result of the action execution.
-
-float32 success            # Success value indicating the outcome of the action, e.g., completion status or processing result

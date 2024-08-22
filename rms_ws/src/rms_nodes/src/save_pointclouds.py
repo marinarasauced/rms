@@ -26,14 +26,17 @@ class SavePointCloud(Node):
         """
         super().__init__("save_pointclouds")
 
+        self.declare_parameter("pointcloud_publisher_topic", "/rms/pointcloud/save")
+        self._pointcloud_publisher_topic = self.get_parameter("pointcloud_publisher_topic").get_parameter_value().string_value
+
         self._pointcloud_subscription = self.create_subscription(
             PointCloudStamped,
-            "/rms/pointcloud/save",
-            10,
-            self._pointcloud_callback
+            self._pointcloud_publisher_topic,
+            self._pointcloud_callback,
+            10
         )
 
-        self.get_logger("ready to save pointclouds")
+        self.get_logger().info("ready to save pointclouds")
 
     
     def _pointcloud_callback(self, msg: PointCloudStamped):
@@ -43,13 +46,14 @@ class SavePointCloud(Node):
         Args:
             msg (PointCloudStamped): The ROS2 PointCloudStamped message that is to be saved.
         """
+        self.get_logger().info(f"received {msg.file_name}")
         file_path = path.abspath(path.join(path.expanduser("~/"), msg.file_path))
         if not check_path(file_path):
             create_path(file_path) 
 
         file_path_ = path.abspath(path.join(file_path, msg.file_name))
         save_pointcloud(msg.pointcloud, file_path_)
-        self.get_logger(f"saved {msg.file_name} at {file_path}")
+        self.get_logger().info(f"saved {msg.file_name} at {file_path}")
 
 
 def main(args=None):

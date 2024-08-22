@@ -73,6 +73,8 @@ class PointCloudRegistrationServer(Node):
             self._registration_execute
         )
 
+        self.get_logger().info("ready to register pointclouds")
+
     
     def _registration_execute(self, goal_handle):
         """

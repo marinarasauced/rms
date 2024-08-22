@@ -9,15 +9,15 @@ string model_path    # Path to the target pointcloud file (e.g., from home dir t
 
 ---
 
+# Result definition
+# Contains the result of the pointcloud registration action.
+
+bool success            # Boolean indicating whether the registration was successful
+
+---
+
 # Feedback definition
 # Provides updates on the progress of the registration process.
 
 float32 successes
 float32 failures
-
----
-
-# Result definition
-# Contains the result of the pointcloud registration action.
-
-float32 success            # Boolean indicating whether the registration was successful

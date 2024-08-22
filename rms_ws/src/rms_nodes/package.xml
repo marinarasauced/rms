@@ -8,6 +8,7 @@
   <license>Private License</license>
 
   <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>rms_msgs</depend>
 
