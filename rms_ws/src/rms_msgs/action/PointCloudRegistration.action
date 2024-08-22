@@ -19,5 +19,5 @@ bool success            # Boolean indicating whether the registration was succes
 # Feedback definition
 # Provides updates on the progress of the registration process.
 
-float32 successes
-float32 failures
+int8 successes
+int8 failures

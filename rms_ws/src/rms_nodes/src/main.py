@@ -3,7 +3,10 @@
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from rms_msgs.action import PointCloudCollection
+from rms_msgs.action import (
+    PointCloudCollection,
+    PointCloudRegistration,
+)
 
 from os import path
 import sys
@@ -26,7 +29,7 @@ class ReconfigurableManufacturingSystems(Node):
         """
         Initialize the RMS node.
         """
-        super().__init__("rms_main")
+        super().__init__("main")
 
         self.declare_parameter("manipulators", ["vx250", "vx300s"])
         self.declare_parameter("collection_action", "collect_pointclouds_at_viewpoints")
@@ -53,8 +56,14 @@ class ReconfigurableManufacturingSystems(Node):
                 f"/{manipulator}/{self._collection_action}"
             )
 
-        # Send goals once all clients are ready
+        self._registration_client = ActionClient(
+            self,
+            PointCloudRegistration,
+            "/rms/register_pointclouds_to_model"
+        )
+
         self._send_collection_goals()
+
 
     def _send_collection_goals(self):
         """
@@ -63,16 +72,18 @@ class ReconfigurableManufacturingSystems(Node):
         for manipulator, client in self._collection_clients.items():
             if not client.wait_for_server(timeout_sec=5.0):
                 self.get_logger().error(f"action server for {manipulator} unavailable")
+                self._collection_counter = self._collection_counter + 1
                 return
 
             goal = PointCloudCollection.Goal()
             goal.viewpoints = get_viewpoints(self.config_path, manipulator)
             goal.scans_path = self.scans_path
 
-            self.get_logger().info(f"sending goal to {manipulator}")
+            self.get_logger().info(f"sending collection goal to {manipulator}")
 
             future = client.send_goal_async(goal)
             future.add_done_callback(lambda future, manipulator=manipulator: self._handle_collection_result(manipulator, future))
+
 
     def _handle_collection_result(self, manipulator, future):
         """
@@ -81,10 +92,10 @@ class ReconfigurableManufacturingSystems(Node):
         goal_handle = future.result()
 
         if not goal_handle.accepted:
-            self.get_logger().error(f"goal rejected by {manipulator}")
+            self.get_logger().error(f"collection goal rejected by {manipulator}")
             return
 
-        self.get_logger().info(f"goal accepted by {manipulator}")
+        self.get_logger().info(f"collection goal accepted by {manipulator}")
 
         result_future = goal_handle.get_result_async()
         result_future.add_done_callback(lambda future, manipulator=manipulator: self._handle_collection_completion(manipulator, future))
@@ -95,13 +106,52 @@ class ReconfigurableManufacturingSystems(Node):
         Finalizes the collection process and checks if all manipulators are done.
         """
         result = future.result().result
-        self.get_logger().info(f"received result from {manipulator}: {result.success}")
+        self.get_logger().info(f"received collection result from {manipulator}: {result.success}")
 
         self._collection_counter += 1
 
         if self._collection_counter == self._collection_count:
-            self.get_logger().info("all manipulators are done")
-            rclpy.shutdown()
+            self.get_logger().info("all online manipulators are done, sending registration goal")
+            self._send_registration_goal()
+    
+    
+    def _send_registration_goal(self):
+        """
+        
+        """
+        goal = PointCloudRegistration.Goal()
+        goal.scans_path = self.scans_path
+        goal.model_path = self.model_path
+
+        self.get_logger().info("sending registration goal")
+
+        future = self._registration_client.send_goal_async(goal)
+        future.add_done_callback(lambda future: self._handle_registration_result(future))
+
+    
+    def _handle_registration_result(self, future):
+        """
+        
+        """
+        goal_handle = future.result()
+
+        if not goal_handle.accepted:
+            self.get_logger().error("registration goal rejected")
+            return
+
+        self.get_logger().info("registration goal accepted")
+        
+        result_future = goal_handle.get_result_async()
+        result_future.add_done_callback(lambda future: self._handle_registration_completion(future))
+
+    
+    def _handle_registration_completion(self, future):
+        """
+        
+        """
+        result = future.result().result
+        self.get_logger().info(f"registration result: {result.success}")
+        rclpy.shutdown()
 
 
 def main(args=None):

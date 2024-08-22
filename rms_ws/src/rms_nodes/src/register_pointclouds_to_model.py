@@ -86,7 +86,7 @@ class PointCloudRegistrationServer(Node):
 
         if not goal.scans_path or not goal.model_path:
             self.get_logger().error("invalid goal: scans_file_path or model_file_path is empty")
-            result.success = 0.0
+            result.success = False
             goal_handle.abort(result)
             return
         
@@ -99,6 +99,7 @@ class PointCloudRegistrationServer(Node):
 
         for scan in scans:
             scan = self.prefilter_pointcloud(scan)
+            o3d.visualization.draw_geometries([scan])
 
             attempts = 0
             confidence = 0
@@ -133,7 +134,7 @@ class PointCloudRegistrationServer(Node):
         o3d.io.write_point_cloud(file_path, registration)
 
         goal_handle.succeed()
-        result.success = 1
+        result.success = True
         return result
 
 
@@ -178,7 +179,7 @@ class PointCloudRegistrationServer(Node):
         defects_p_temp.paint_uniform_color([0.6350, 0.0780, 0.1840])
         defects_m_temp.paint_uniform_color([0.4940, 0.1840, 0.5560])
 
-        o3d.visualization.draw_geometryies([model_temp, scan_temp, noise_temp, defects_p_temp, defects_m_temp])
+        o3d.visualization.draw_geometries([model_temp, scan_temp, noise_temp, defects_p_temp, defects_m_temp])
 
 
 def main(args=None):

@@ -157,7 +157,7 @@ def execute_pointcloud_comparison(source, target, distance_threshold=0.0025):
         likely_source_.points = o3d.utility.Vector3dVector(likely_source)
     if likely_noise:
         likely_noise_.points = o3d.utility.Vector3dVector(likely_noise)
-    return likely_source, likely_noise_
+    return likely_source_, likely_noise_
 
 
 def get_registration_confidence(scan, model, distance_threshold):
