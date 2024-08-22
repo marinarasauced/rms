@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rms_msgs.msg import PointCloudStamped
 
@@ -16,7 +17,7 @@ from modules.collection import (
 )
 
 
-class SavePointCloud(Node):
+class SavePointClouds(Node):
     """
     
     """
@@ -62,9 +63,14 @@ def main(args=None):
     """
     try:
         rclpy.init(args=args)
-        node = SavePointCloud()
-        rclpy.spin(node)
-    except:
+        node = SavePointClouds()
+        executor = MultiThreadedExecutor(num_threads=4)
+        executor.add_node(node)
+        try:
+            executor.spin()
+        finally:
+            executor.shutdown()
+    except KeyboardInterrupt:
         pass
     finally:
         node.destroy_node()

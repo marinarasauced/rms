@@ -211,7 +211,7 @@ def main(args=None):
         finally:
             executor.shutdown()
     except KeyboardInterrupt:
-        print("keyboard interrupt, shutting down")
+        pass
     finally:
         node.destroy_node()
 

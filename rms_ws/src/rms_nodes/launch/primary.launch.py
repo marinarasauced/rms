@@ -43,10 +43,7 @@ def generate_launch_description():
         package='rms_nodes',
         executable='register_pointclouds_to_model',
         name='register_to_model_server',
-        namespace=robot_model,
-        parameters=[{
-            'robot_model': robot_model,
-        }],
+        namespace="rms",
     )
 
     # Node to save pointclouds
