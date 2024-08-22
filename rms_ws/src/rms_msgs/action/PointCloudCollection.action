@@ -5,7 +5,7 @@
 # Specifies the viewpoints and file path for processing and collection.
 # The goal for this action includes a list of viewpoints and a file path for storing results.
 ViewPoint[] viewpoints     # List of viewpoints to be processed or considered
-string file_path           # Path to save the pointcloud data or results
+string scans_path           # Path to save the pointcloud data or results
 
 ---
 

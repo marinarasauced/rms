@@ -128,7 +128,7 @@ class PointCloudRegistrationServer(Node):
         self.visualize_pointcloud(model, likely_scan, likely_noise, likely_defects_p, likely_defects_m)
 
         file_path = path.abspath(path.join(goal.scans_path, "registration.pcd"))
-        o3d.io.write_point_cloud(registration, file_path)
+        o3d.io.write_point_cloud(file_path, registration)
 
         goal_handle.succeed()
         result.success = 1

@@ -4,6 +4,7 @@ from sensor_msgs.msg import PointCloud2, PointField
 import ctypes
 import math
 import numpy as np
+import open3d as o3d
 import struct
 import sys
 
@@ -99,3 +100,16 @@ def unpack_pointcloud(point_list):
     xyz = np.array([[point[0], point[1], point[2]] for point in point_list])
     rgb = np.array([unpack_rgb(point[3]) for point in point_list]) if len(point_list[0]) > 3 else np.zeros((len(point_list), 3))
     return xyz, rgb
+
+
+def convert_stl_to_pcd(stl_file, pcd_file):
+    """
+    Convert an STL file to a PCD file.
+
+    Args:
+        stl_file (str): Path to the input STL file.
+        pcd_file (str): Path to the output PCD file.
+    """
+    stl = o3d.io.read_triangle_mesh(stl_file)
+    pcd = stl.sample_points_uniformly(number_of_points=100000)
+    o3d.io.write_point_cloud(pcd_file, pcd)

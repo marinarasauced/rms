@@ -1,8 +1,6 @@
 from setuptools import find_packages, setup
-import os
-from glob import glob
 
-package_name = 'rms_nodes_py'
+package_name = 'rms_nodes'
 
 setup(
     name=package_name,
@@ -11,10 +9,6 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-                (
-            os.path.join("share", package_name, "launch"),
-            glob(os.path.join("launch", "*launch.[pxy][yma]*")),
-        ),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -27,6 +21,7 @@ setup(
             'save_pointclouds = src.save_pointclouds:main',
             'collect_pointclouds_at_viewpoints = src.collect_pointclouds_at_viewpoints:main',
             'register_pointclouds_to_model = src.register_pointclouds_to_model:main',
+            'main = src.main:main',
         ],
     },
 )

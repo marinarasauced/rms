@@ -114,11 +114,12 @@ class PointCloudCollectionServer(Node):
         feedback = PointCloudCollection.Feedback()
         result = PointCloudCollection.Result()
 
-        if not goal.viewpoints or not goal.file_path:
-            self.get_logger().error("invalid goal: viewpoints or file_path is empty")
+        if not goal.viewpoints or not goal.scans_path:
+            self.get_logger().error("invalid goal: viewpoints or scans_path is empty")
             result.success = 0.0
             goal_handle.abort(result)
             return
+        self.file_path = goal.scans_path
         
         self.get_logger().info("collecting pointclouds at viewpoints")
         feedback.progress = 0.0
