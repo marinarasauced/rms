@@ -29,6 +29,11 @@ from modules.registration import (
     execute_pointcloud_comparison,
 )
 
+_BLUE = [0.0000, 0.4470, 0.7410]
+_GREEN = [0.4660, 0.6740, 0.1880]
+_YELLOW = [0.9290, 0.6940, 0.1250]
+_ORANGE = [0.8500, 0.3250, 0.0980]
+
 
 class PointCloudRegistrationServer(Node):
     """
@@ -50,8 +55,9 @@ class PointCloudRegistrationServer(Node):
         self.declare_parameter("alignment_threshold", 0.99)
         self.declare_parameter("alignment_attempts", 3)
         self.declare_parameter("registration_service", "register_pointclouds_to_model")
-        self.declare_parameter("noise_threshold", 0.002)
-        self.declare_parameter("defect_threshold", 0.005)
+        self.declare_parameter("low_threshold", 0.002)
+        self.declare_parameter("med_threshold", 0.0033)
+        self.declare_parameter("high_threshold", 0.006)
 
         self.voxel_size = self.get_parameter("voxel_size").get_parameter_value().double_value
         self.x_min = self.get_parameter("x_min").get_parameter_value().double_value
@@ -63,8 +69,9 @@ class PointCloudRegistrationServer(Node):
         self.alignment_threshold = self.get_parameter("alignment_threshold").get_parameter_value().double_value
         self.alignment_attempts = self.get_parameter("alignment_attempts").get_parameter_value().integer_value
         self._registration_service = self.get_parameter("registration_service").get_parameter_value().string_value
-        self.noise_threshold = self.get_parameter("noise_threshold").get_parameter_value().double_value
-        self.defect_threshold = self.get_parameter("defect_threshold").get_parameter_value().double_value
+        self.threshold_low = self.get_parameter("low_threshold").get_parameter_value().double_value
+        self.threshold_med = self.get_parameter("med_threshold").get_parameter_value().double_value
+        self.threshold_high = self.get_parameter("high_threshold").get_parameter_value().double_value
 
         self._registration_server = ActionServer(
             self,
@@ -124,9 +131,9 @@ class PointCloudRegistrationServer(Node):
         registration = filter_pointcloud_by_removing_statistical_outliers(registration, 50, 1.0)
         registration = filter_pointcloud_within_scaled_model_bbox(registration, model, 1.2)
 
-        likely_scan_with_noise, likely_defects_p = execute_pointcloud_comparison(registration, model, self.defect_threshold)
-        likely_scan_without_noise, likely_noise = execute_pointcloud_comparison(likely_scan_with_noise, model, self.noise_threshold)
-        likely_scan, likely_defects_m = execute_pointcloud_comparison(model, likely_scan_with_noise, self.noise_threshold)
+        likely_scan_with_noise, likely_defects_p = execute_pointcloud_comparison(registration, model, self.threshold_high)
+        likely_scan_without_noise, likely_noise = execute_pointcloud_comparison(likely_scan_with_noise, model, self.threshold_low)
+        likely_scan, likely_defects_m = execute_pointcloud_comparison(model, likely_scan_with_noise, self.threshold_med)
         
         self.visualize_pointcloud(model, likely_scan, likely_noise, likely_defects_p, likely_defects_m)
 
@@ -147,7 +154,7 @@ class PointCloudRegistrationServer(Node):
         scan = filter_pointcloud_by_axis(scan, self.z_min, self.z_max, axis=2)
         scan = filter_pointcloud_by_removing_ground_plane(scan)
         scan = filter_pointcloud_by_removing_radial_outliers(scan)
-        scan = filter_pointcloud_by_removing_statistical_outliers(scan, nb_neighbors=30, std_ratio=1.0)
+        scan = filter_pointcloud_by_removing_statistical_outliers(scan, nb_neighbors=30, std_ratio=1.5)
         return scan
     
 
@@ -173,11 +180,11 @@ class PointCloudRegistrationServer(Node):
         defects_p_temp = deepcopy(likely_defects_p)
         defects_m_temp = deepcopy(likely_defects_m)
 
-        model_temp.paint_uniform_color([0.0000, 0.4470, 0.7410])
-        scan_temp.paint_uniform_color([0.8500, 0.3250, 0.0980])
-        noise_temp.paint_uniform_color([0.9290, 0.6940, 0.1250])
-        defects_p_temp.paint_uniform_color([0.6350, 0.0780, 0.1840])
-        defects_m_temp.paint_uniform_color([0.4940, 0.1840, 0.5560])
+        model_temp.paint_uniform_color(_BLUE)
+        scan_temp.paint_uniform_color(_GREEN)
+        noise_temp.paint_uniform_color(_YELLOW)
+        defects_p_temp.paint_uniform_color(_ORANGE)
+        defects_m_temp.paint_uniform_color(_ORANGE)
 
         o3d.visualization.draw_geometries([model_temp, scan_temp, noise_temp, defects_p_temp, defects_m_temp])
 
