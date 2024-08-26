@@ -3,9 +3,7 @@
 import rclpy
 from rclpy.action import ActionServer
 from rclpy.node import Node
-from geometry_msgs.msg import Point
 from rms_msgs.action import PointCloudRegistration
-from rms_msgs.msg import PointCloudStamped
 
 from copy import deepcopy
 import open3d as o3d
@@ -53,7 +51,7 @@ class PointCloudRegistrationServer(Node):
         self.declare_parameter("z_min", 0.2)
         self.declare_parameter("z_max", 0.6)
         self.declare_parameter("alignment_threshold", 0.99)
-        self.declare_parameter("alignment_attempts", 3)
+        self.declare_parameter("alignment_attempts", 5)
         self.declare_parameter("registration_service", "register_pointclouds_to_model")
         self.declare_parameter("low_threshold", 0.002)
         self.declare_parameter("med_threshold", 0.0033)
@@ -114,7 +112,7 @@ class PointCloudRegistrationServer(Node):
                 scan = self.register_pointcloud(scan, model)
                 confidence = get_registration_confidence(scan, model, self.voxel_size)
                 attempts += 1
-                self.get_logger().info(f"scan #{counter:02d} ({attempts}/{self.alignment_attempts}) : currently {confidence:.4f}% confident in alignment")
+                self.get_logger().info(f"scan #{counter:02d} attempt #({attempts}/{self.alignment_attempts}) : {confidence:.4f}% confidence in current alignment")
 
             if confidence < self.alignment_threshold:
                 feedback.failures = feedback.failures + 1
