@@ -50,7 +50,7 @@ class PointCloudRegistrationServer(Node):
         self.declare_parameter("y_max", 1.0)
         self.declare_parameter("z_min", 0.2)
         self.declare_parameter("z_max", 0.6)
-        self.declare_parameter("alignment_threshold", 0.99)
+        self.declare_parameter("alignment_threshold", 0.987)
         self.declare_parameter("alignment_attempts", 5)
         self.declare_parameter("registration_service", "register_pointclouds_to_model")
         self.declare_parameter("low_threshold", 0.002)
@@ -104,7 +104,6 @@ class PointCloudRegistrationServer(Node):
 
         for scan in scans:
             scan = self.prefilter_pointcloud(scan)
-            o3d.visualization.draw_geometries([scan])
 
             attempts = 0
             confidence = 0
@@ -121,6 +120,7 @@ class PointCloudRegistrationServer(Node):
                 registration = registration + scan
                 feedback.successes = feedback.successes + 1
                 goal_handle.publish_feedback(feedback)
+                # self.visualize_pointcloud(model, scan)
 
             counter += 1
 
@@ -151,8 +151,8 @@ class PointCloudRegistrationServer(Node):
         scan = filter_pointcloud_by_axis(scan, self.y_min, self.y_max, axis=1)
         scan = filter_pointcloud_by_axis(scan, self.z_min, self.z_max, axis=2)
         scan = filter_pointcloud_by_removing_ground_plane(scan)
-        scan = filter_pointcloud_by_removing_radial_outliers(scan)
-        scan = filter_pointcloud_by_removing_statistical_outliers(scan, nb_neighbors=30, std_ratio=1.5)
+        scan = filter_pointcloud_by_removing_radial_outliers(scan, nb_points=50, radius=0.01)
+        scan = filter_pointcloud_by_removing_statistical_outliers(scan, nb_neighbors=30, std_ratio=1.0)
         return scan
     
 
@@ -168,7 +168,7 @@ class PointCloudRegistrationServer(Node):
         return scan
 
 
-    def visualize_pointcloud(self, model, likely_scan, likely_noise, likely_defects_p, likely_defects_m):
+    def visualize_pointcloud(self, model, likely_scan, likely_noise=o3d.geometry.PointCloud(), likely_defects_p=o3d.geometry.PointCloud(), likely_defects_m=o3d.geometry.PointCloud()):
         """
         
         """
