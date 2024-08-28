@@ -42,7 +42,7 @@ class PointCloudCollectionServer(Node):
         self.declare_parameter("offset_x", 0.7)
         self.declare_parameter("offset_y", 0.0)
         self.declare_parameter("offset_z", 0.0)
-        self.declare_parameter("wait_duration", 2.0)
+        self.declare_parameter("wait_duration", 3.0)
 
         self.robot_model = self.get_parameter("robot_model").get_parameter_value().string_value
         self._pointcloud_publisher_topic = self.get_parameter("pointcloud_publisher_topic").get_parameter_value().string_value
