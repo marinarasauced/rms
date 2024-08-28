@@ -104,6 +104,7 @@ class PointCloudRegistrationServer(Node):
 
         for scan in scans:
             scan = self.prefilter_pointcloud(scan)
+            o3d.visualization.draw_geometries([scan])
 
             attempts = 0
             confidence = 0
