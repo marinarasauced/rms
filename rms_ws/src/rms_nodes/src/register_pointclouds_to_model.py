@@ -44,13 +44,13 @@ class PointCloudRegistrationServer(Node):
         super().__init__("pointcloud_registration")
 
         self.declare_parameter("voxel_size", 0.005)
-        self.declare_parameter("x_min", -0.2)
-        self.declare_parameter("x_max", 0.2)
-        self.declare_parameter("y_min", -1.0)
-        self.declare_parameter("y_max", 1.0)
-        self.declare_parameter("z_min", 0.2)
+        self.declare_parameter("x_min", -0.1)
+        self.declare_parameter("x_max", 0.1)
+        self.declare_parameter("y_min", -0.2)
+        self.declare_parameter("y_max", 0.2)
+        self.declare_parameter("z_min", 0.3)
         self.declare_parameter("z_max", 0.6)
-        self.declare_parameter("alignment_threshold", 0.987)
+        self.declare_parameter("alignment_threshold", 0.98)
         self.declare_parameter("alignment_attempts", 5)
         self.declare_parameter("registration_service", "register_pointclouds_to_model")
         self.declare_parameter("low_threshold", 0.002)
@@ -104,7 +104,7 @@ class PointCloudRegistrationServer(Node):
 
         for scan in scans:
             scan = self.prefilter_pointcloud(scan)
-            o3d.visualization.draw_geometries([scan])
+            # o3d.visualization.draw_geometries([scan])
 
             attempts = 0
             confidence = 0
