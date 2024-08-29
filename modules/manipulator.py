@@ -38,7 +38,9 @@ def move_vx_bot_to_viewpoint(bot, viewpoint, offset, wait_duration):
     dx = offset.x - viewpoint.position.x
     dy = offset.y - viewpoint.position.y
     dz = offset.z - viewpoint.position.z
-    roll = 0.0 # roll = np.arctan2(dy, dz)
+    roll = 0.0
+    if dy != 0:
+        roll = np.pi - np.arctan2(dy, dz)
     pitch = -np.arctan2(dz, np.sqrt(dx ** 2 + dy ** 2))
     yaw = np.arctan2(dy, dx)
     bot.arm.set_ee_pose_components(
