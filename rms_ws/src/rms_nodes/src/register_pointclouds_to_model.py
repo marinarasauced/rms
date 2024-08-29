@@ -104,6 +104,8 @@ class PointCloudRegistrationServer(Node):
 
         for scan in scans:
             scan = self.prefilter_pointcloud(scan)
+            if len(scan.points) == 0:
+                continue
             # o3d.visualization.draw_geometries([scan])
 
             attempts = 0
