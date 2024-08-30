@@ -71,11 +71,11 @@ def move_vx_bot_to_sleep(bot):
     bot.arm.go_to_sleep_pose()
 
 
-def grip_vx_bot_at_viewpoint(bot, viewpoint, start="open", end="close"):
+def grip_vx_bot_at_viewpoint(bot, viewpoint, robot_model, start="open", end="close"):
     """
 
     """
-    gripper = InterbotixGripperXS(robot_model=bot.robot_model, group_name=bot.group_name, gripper_name=bot.gripper_name)
+    gripper = InterbotixGripperXS(robot_model, group_name="arm", gripper_name="gripper")
     if start == "open":
         gripper.open()
     elif start == "close":
