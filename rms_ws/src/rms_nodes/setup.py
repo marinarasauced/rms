@@ -28,6 +28,8 @@ setup(
             'collect_pointclouds_at_viewpoints = src.collect_pointclouds_at_viewpoints:main',
             'register_pointclouds_to_model = src.register_pointclouds_to_model:main',
             'main = src.main:main',
+            'grip = src.grip_demo:main',
+            'grip_object_to_scan = src.grip_object_to_scan:main',
         ],
     },
 )

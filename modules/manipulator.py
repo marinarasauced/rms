@@ -68,3 +68,23 @@ def move_vx_bot_to_sleep(bot):
     
     """
     bot.arm.go_to_sleep_pose()
+
+
+def grip_vx_bot_at_viewpoint(bot, viewpoint, start="open", end="close"):
+    """
+
+    """
+    if start == "open":
+        bot.gripper.open()
+    elif start == "close":
+        pass
+    bot.gripper.open()
+    bot.arm.set_ee_pose_components(
+        x=viewpoint.position.x,
+        y=viewpoint.position.y,
+        z=viewpoint.position.z
+    )
+    if end == "close":
+        bot.gripper.close()
+    elif end == "open":
+        bot.gripper.open()

@@ -9,8 +9,6 @@ from rms_msgs.action import PointCloudCollection
 from rms_msgs.msg import PointCloudStamped
 from sensor_msgs.msg import PointCloud2
 
-import asyncio
-import numpy as np
 from os import path
 import sys
 import time

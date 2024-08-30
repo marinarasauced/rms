@@ -38,10 +38,21 @@ def generate_launch_description():
         }],
     )
 
+    grip_object_node = Node(
+        package='rms_nodes',
+        executable='grip_object_to_scan',
+        name='grip_object_to_scan',
+        namespace=robot_model,
+        parameters=[{
+            'robot_model': robot_model,
+        }],
+    )
+
     # Create the launch description and add the actions
     ld = LaunchDescription()
     ld.add_action(robot_model_)
     ld.add_action(manipulator_launch_file)
     ld.add_action(collection_server_node)
+    ld.add_action(grip_object_node)
 
     return ld
