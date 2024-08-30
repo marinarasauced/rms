@@ -75,7 +75,7 @@ def grip_vx_bot_at_viewpoint(bot, viewpoint, robot_model, start="open", end="clo
     """
 
     """
-    gripper = InterbotixGripperXS(robot_model, group_name="arm", gripper_name="gripper")
+    gripper = InterbotixGripperXS(robot_model, gripper_name="gripper")
     if start == "open":
         gripper.open()
     elif start == "close":
