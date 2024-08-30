@@ -71,7 +71,7 @@ def move_vx_bot_to_sleep(bot):
     bot.arm.go_to_sleep_pose()
 
 
-def grip_vx_bot_at_viewpoint(bot, viewpoint, robot_model, start="release", end="grasp"):
+def grip_vx_bot_at_viewpoint(bot, viewpoint, start="release", end="grasp"):
     """
 
     """
