@@ -3,6 +3,7 @@ import numpy as np
 import time
 
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS # type: ignore
+from interbotix_xs_modules.xs_robot.gripper import InterbotixGripperXS # type: ignore
 
 
 def get_vx_bot(robot_model):
@@ -74,17 +75,18 @@ def grip_vx_bot_at_viewpoint(bot, viewpoint, start="open", end="close"):
     """
 
     """
+    gripper = InterbotixGripperXS(robot_model=bot.robot_model, group_name=bot.group_name, gripper_name=bot.gripper_name)
     if start == "open":
-        bot.gripper.open()
+        gripper.open()
     elif start == "close":
         pass
-    bot.gripper.open()
     bot.arm.set_ee_pose_components(
         x=viewpoint.position.x,
         y=viewpoint.position.y,
         z=viewpoint.position.z
     )
     if end == "close":
-        bot.gripper.close()
+        gripper.close()
     elif end == "open":
-        bot.gripper.open()
+        gripper.open()
+    gripper.shutdown()
