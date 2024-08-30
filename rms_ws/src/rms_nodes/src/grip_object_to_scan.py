@@ -109,7 +109,7 @@ class GripObjectToShowServer(Node):
         goal_handle.publish_feedback(feedback)
 
         try:
-            grip_vx_bot_at_viewpoint(self.bot, grip_pose, self.robot_model, start="open", end="close")
+            grip_vx_bot_at_viewpoint(self.bot, grip_pose, self.robot_model, start="release", end="grasp")
             feedback.progress = 1 / 3
             goal_handle.publish_feedback(feedback)
 
@@ -117,7 +117,7 @@ class GripObjectToShowServer(Node):
             feedback.progress = 2 / 3
             goal_handle.publish_feedback(feedback)
 
-            grip_vx_bot_at_viewpoint(self.bot, grip_pose, start="close", end="open")
+            grip_vx_bot_at_viewpoint(self.bot, grip_pose, start="grasp", end="release")
             feedback.progress = 3 / 3
             goal_handle.publish_feedback(feedback)
 
