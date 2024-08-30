@@ -64,9 +64,9 @@ class ReconfigurableManufacturingSystemsGripDemo(Node):
         self._grip_goal.viewpoints[0].position.z = 0.2
 
         self._grip_goal.viewpoints.append(ViewPoint())
-        self._grip_goal.viewpoints[1].position.x = 0.4
+        self._grip_goal.viewpoints[1].position.x = 0.55
         self._grip_goal.viewpoints[1].position.y = 0.0
-        self._grip_goal.viewpoints[1].position.z = 0.4
+        self._grip_goal.viewpoints[1].position.z = 0.23
 
 
         self._send_collection_goals()

@@ -34,9 +34,9 @@ class GripObjectToShowServer(Node):
 
         self.declare_parameter("robot_model", "vx___")
         self.declare_parameter("grip_action", "grip_object_to_scan")
-        self.declare_parameter("offset_x", 0.0)
+        self.declare_parameter("offset_x", 1.0)
         self.declare_parameter("offset_y", 0.0)
-        self.declare_parameter("offset_z", 100.0)
+        self.declare_parameter("offset_z", 10.0)
         self.declare_parameter("wait_duration", 10.0)
 
         self.robot_model = self.get_parameter("robot_model").get_parameter_value().string_value
@@ -109,7 +109,7 @@ class GripObjectToShowServer(Node):
         goal_handle.publish_feedback(feedback)
 
         try:
-            grip_vx_bot_at_viewpoint(self.bot, grip_pose, self.robot_model, start="release", end="grasp")
+            grip_vx_bot_at_viewpoint(self.bot, grip_pose, start="release", end="grasp")
             feedback.progress = 1 / 3
             goal_handle.publish_feedback(feedback)
 
