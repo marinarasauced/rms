@@ -6,6 +6,7 @@ from rclpy.node import Node
 from rms_msgs.action import PointCloudRegistration
 
 from copy import deepcopy
+import numpy as np
 import open3d as o3d
 from os import path
 import sys
@@ -48,9 +49,9 @@ class PointCloudRegistrationServer(Node):
         self.declare_parameter("x_max", 0.1)
         self.declare_parameter("y_min", -0.2)
         self.declare_parameter("y_max", 0.2)
-        self.declare_parameter("z_min", 0.3)
+        self.declare_parameter("z_min", 0.1)
         self.declare_parameter("z_max", 0.6)
-        self.declare_parameter("alignment_threshold", 0.98)
+        self.declare_parameter("alignment_threshold", 0.985)
         self.declare_parameter("alignment_attempts", 5)
         self.declare_parameter("registration_service", "register_pointclouds_to_model")
         self.declare_parameter("low_threshold", 0.002)
@@ -132,11 +133,16 @@ class PointCloudRegistrationServer(Node):
         registration = filter_pointcloud_by_removing_statistical_outliers(registration, 50, 1.0)
         registration = filter_pointcloud_within_scaled_model_bbox(registration, model, 1.2)
 
+        # below 2 lines to remove bottom fringe from object/registration due to resolution
+        model = filter_pointcloud_by_axis(model, 0.015, np.inf, 2)
+        registration = filter_pointcloud_by_axis(registration, 0.015, np.inf, 2)
+
         likely_scan_with_noise, likely_defects_p = execute_pointcloud_comparison(registration, model, self.threshold_high)
         likely_scan_without_noise, likely_noise = execute_pointcloud_comparison(likely_scan_with_noise, model, self.threshold_low)
-        likely_scan, likely_defects_m = execute_pointcloud_comparison(model, likely_scan_with_noise, self.threshold_med)
+        likely_scan, likely_defects_m = execute_pointcloud_comparison(model, likely_scan_with_noise, self.threshold_high)
         
         self.visualize_pointcloud(model, likely_scan, o3d.geometry.PointCloud(), likely_defects_p, likely_defects_m)
+        # self.visualize_pointcloud(model, likely_scan, likely_noise, likely_defects_p, likely_defects_m)
 
         file_path = path.abspath(path.join(goal.scans_path, "registration.pcd"))
         o3d.io.write_point_cloud(file_path, registration)

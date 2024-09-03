@@ -30,6 +30,9 @@ setup(
             'main = src.main:main',
             'grip = src.grip_demo:main',
             'grip_object_to_scan = src.grip_object_to_scan:main',
+            'demo1 = src.demo1:main',
+            'demo2 = src.demo2:main',
+            'demo3 = src.demo3:main',
         ],
     },
 )

@@ -36,7 +36,7 @@ class GripObjectToShowServer(Node):
         self.declare_parameter("grip_action", "grip_object_to_scan")
         self.declare_parameter("offset_x", 0.0)
         self.declare_parameter("offset_y", 0.0)
-        self.declare_parameter("offset_z", 0.0)
+        self.declare_parameter("offset_z", 5.0)
         self.declare_parameter("wait_duration", 10.0)
 
         self.robot_model = self.get_parameter("robot_model").get_parameter_value().string_value
