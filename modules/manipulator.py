@@ -40,8 +40,8 @@ def move_vx_bot_to_viewpoint(bot, viewpoint, offset, wait_duration):
     dy = offset.y - viewpoint.position.y
     dz = offset.z - viewpoint.position.z
     roll = 0.0
-    if dy != 0:
-        roll = np.pi - np.arctan2(dy, dz)
+    # if dy != 0:
+    #     roll = np.pi - np.arctan2(dy, dz)
     pitch = -np.arctan2(dz, np.sqrt(dx ** 2 + dy ** 2))
     yaw = np.arctan2(dy, dx)
     bot.arm.set_ee_pose_components(
@@ -84,7 +84,7 @@ def grip_vx_bot_at_viewpoint(bot, viewpoint, start="release", end="grasp"):
         x=viewpoint.position.x,
         y=viewpoint.position.y,
         z=viewpoint.position.z,
-        pitch = -np.pi / 4,
+        pitch=np.pi/4,
     )
     if end == "grasp":
         bot.gripper.grasp()
