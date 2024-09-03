@@ -4,6 +4,8 @@ import numpy as np
 import open3d as o3d
 from os import path
 
+from modules.collection import save_pointcloud
+
 
 def load_pointcloud(file_path):
     """
@@ -193,3 +195,13 @@ def filter_pointcloud_within_scaled_model_bbox(source, target, scale):
         filtered_pointcloud.points = o3d.utility.Vector3dVector(np.array(filtered_points))
     
     return filtered_pointcloud
+
+
+def filter_pointcloud_by_removing_bottom(file_path, old_name, new_name, min_value):
+    """
+    
+    """
+    pointcloud = load_pointcloud(path.abspath(path.join(file_path, old_name)))
+    pointcloud = filter_pointcloud_by_axis(pointcloud, min_value, np.inf, 2)
+    o3d.visualization.draw_geometries([pointcloud])
+    o3d.io.write_point_cloud(path.abspath(path.join(file_path, new_name)), pointcloud)

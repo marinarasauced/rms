@@ -6,6 +6,7 @@
 # The goal for this action includes a list of viewpoints and a file path for storing results.
 ViewPoint[] viewpoints     # List of viewpoints to be processed or considered
 string scans_path           # Path to save the pointcloud data or results
+int8 first_index 
 
 ---
 

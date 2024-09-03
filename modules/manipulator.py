@@ -84,7 +84,7 @@ def grip_vx_bot_at_viewpoint(bot, viewpoint, start="release", end="grasp"):
         x=viewpoint.position.x,
         y=viewpoint.position.y,
         z=viewpoint.position.z,
-        pitch = -np.pi / 2.1,
+        pitch = -np.pi / 4,
     )
     if end == "grasp":
         bot.gripper.grasp()

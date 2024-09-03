@@ -135,12 +135,13 @@ class PointCloudCollectionServer(Node):
         Execute the point cloud collection goal.
         """
         self.busy = 1
-        self.counter = 1
+        # self.counter = 1
         self.file_path = None
         self.pointcloud = None
         self.status = 0
 
         goal = goal_handle.request
+        self.counter = goal.first_index
         feedback = PointCloudCollection.Feedback()
         result = PointCloudCollection.Result()
 

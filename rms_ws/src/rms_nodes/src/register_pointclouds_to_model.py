@@ -136,7 +136,7 @@ class PointCloudRegistrationServer(Node):
         likely_scan_without_noise, likely_noise = execute_pointcloud_comparison(likely_scan_with_noise, model, self.threshold_low)
         likely_scan, likely_defects_m = execute_pointcloud_comparison(model, likely_scan_with_noise, self.threshold_med)
         
-        self.visualize_pointcloud(model, likely_scan, likely_noise, likely_defects_p, likely_defects_m)
+        self.visualize_pointcloud(model, likely_scan, o3d.geometry.PointCloud(), likely_defects_p, likely_defects_m)
 
         file_path = path.abspath(path.join(goal.scans_path, "registration.pcd"))
         o3d.io.write_point_cloud(file_path, registration)

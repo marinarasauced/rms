@@ -78,6 +78,7 @@ class ReconfigurableManufacturingSystems(Node):
             goal = PointCloudCollection.Goal()
             goal.viewpoints = get_viewpoints(self.config_path, manipulator)
             goal.scans_path = self.scans_path
+            goal.first_index = 1
 
             self.get_logger().info(f"sending collection goal to {manipulator}")
 
