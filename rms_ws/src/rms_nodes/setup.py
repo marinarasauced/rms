@@ -1,6 +1,6 @@
-from setuptools import find_packages, setup
-import os
 from glob import glob
+from os import path
+from setuptools import find_packages, setup
 
 package_name = 'rms_nodes'
 
@@ -11,9 +11,9 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-                (
-            os.path.join("share", package_name, "launch"),
-            glob(os.path.join("launch", "*launch.[pxy][yma]*")),
+        (
+            path.join("share", package_name, "launch"),
+            glob(path.join("launch", "*launch.[pxy][yma]*")),
         ),
     ],
     install_requires=['setuptools'],
@@ -24,10 +24,15 @@ setup(
     license='Private License',
     entry_points={
         'console_scripts': [
-            'collect_at_viewpoints_server = rms_nodes.collect_at_viewpoints_server:main',
-            'register_to_model_server = rms_nodes.register_to_model_server:main',
-            'config1 = rms_nodes._configuration1:main',
-            'config2 = rms_nodes._configuration2:main',
+            'save_pointclouds = src.save_pointclouds:main',
+            'collect_pointclouds_at_viewpoints = src.collect_pointclouds_at_viewpoints:main',
+            'register_pointclouds_to_model = src.register_pointclouds_to_model:main',
+            'main = src.main:main',
+            'grip = src.grip_demo:main',
+            'grip_object_to_scan = src.grip_object_to_scan:main',
+            'demo1 = src.demo1:main',
+            'demo2 = src.demo2:main',
+            'demo3 = src.demo3:main',
         ],
     },
 )

@@ -7,17 +7,16 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-
-
-  "action/PCDCollection.action"
-  "srv/PCDCollection.srv"
-  "srv/PCDRegistration.srv"
-
-  DEPENDENCIES geometry_msgs std_msgs
+  "msg/PointCloudStamped.msg"
+  "msg/ViewPoint.msg"
+  "action/PointCloudCollection.action"
+  "action/PointCloudRegistration.action"
+  "action/GripObjectToScan.action"
+  DEPENDENCIES geometry_msgs sensor_msgs
 )
 
 ament_package()

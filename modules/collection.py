@@ -1,140 +1,141 @@
-import os
 
-from sensor_msgs.msg import PointCloud2, PointField
+from rms_msgs.msg import ViewPoint
 
-import copy
-import ctypes
 import datetime
-import glob
 import open3d as o3d
-import math
-import numpy as np
-import struct
-import sys
+from os import path, makedirs, listdir
+import re
 
-_DATATYPES = {PointField.INT8: ('b', 1), PointField.UINT8: ('B', 1), PointField.INT16: ('h', 2),
-              PointField.UINT16: ('H', 2), PointField.INT32: ('i', 4), PointField.UINT32: ('I', 4),
-              PointField.FLOAT32: ('f', 4), PointField.FLOAT64: ('d', 8)}
+from modules.conversion import (
+    read_pointcloud,
+    unpack_pointcloud,
+    convert_stl_to_pcd,
+)
 
 
-def get_viewpoints(read_path):
+def check_path(check_path):
+    """
+    Check if the save path exists and if it does not, create empty directories so that it does.
+
+    Args:
+        check_path (string): The absolute path of which's existence is to be checked.
+    """
+    if not path.exists(check_path):
+        return 0
+    else:
+        return 1
+
+
+def create_path(create_path):
+    """
+    Create empty directories for a given path.
+
+    Args:
+        create_path (string): The absolute path at which directories are to be created.
+    """
+    makedirs(create_path)
+
+
+def save_pointcloud(pointcloud, file_path):
+    """
+    Save a ROS2 PointCloud2 message as a PCD file.
+
+    Args:
+        pointcloud (PointClouds2): The ROS2 PointCloud2 msg.
+        file_path (string): The path at which the file_data is to be saved.
+    """
+    point_generator = read_pointcloud(pointcloud, skip_nans=True)
+    point_list = list(point_generator)
+    xyz, rgb = unpack_pointcloud(point_list)
+    
+    file_data = o3d.geometry.PointCloud()
+    file_data.points = o3d.utility.Vector3dVector(xyz)
+    file_data.colors = o3d.utility.Vector3dVector(rgb / 255.0)
+
+    o3d.io.write_point_cloud(file_path, file_data)
+
+
+def get_config_path(rms_path):
     """
     
     """
-    with open(read_path, "r") as file:
+    config_path = path.abspath(path.join(rms_path, "config"))
+    return config_path
+
+
+def get_scans_path(rms_path):
+    """
+    
+    """
+    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    time = datetime.datetime.now().strftime("%H:%M:%S")
+    scan_path = path.abspath(path.join(rms_path, f"scans/{date}/"))
+    if not check_path(scan_path):
+        scans_path = path.join(scan_path, f"0001_{time}")
+        create_path(scans_path)
+        return scans_path
+    else:
+        pattern = re.compile(r"^(\d{4})_\d{2}:\d{2}:\d{2}$")
+        numbers = []
+    for item in listdir(scan_path):
+        if path.isdir(path.join(scan_path, item)):
+            match = pattern.match(item)
+            if match:
+                numbers.append(match.group(1))
+    if numbers:
+        index = int(max(numbers)) + 1
+        scans_path = path.join(scan_path, f"{index:04d}_{time}")
+        create_path(scans_path)
+        return scans_path
+    else:
+        scans_path = path.join(scan_path, f"0001_{time}")
+        create_path(scans_path)
+        return scans_path
+
+
+def get_model_path(rms_path, model_name):
+    """
+    
+    """
+    pcd_path = path.abspath(path.join(rms_path, f"models/pcd/{model_name}.pcd"))
+    stl_path = path.abspath(path.join(rms_path, f"models/stl/{model_name}.stl"))
+
+    if not check_path(pcd_path):
+        if check_path(stl_path):
+            convert_stl_to_pcd(stl_path, pcd_path)
+            return pcd_path
+        else:
+            return None
+    else:
+        return pcd_path
+
+
+def get_viewpoints(config_path, manipulator):
+    """
+    Load viewpoints from a file and convert them into an array of ViewPoint messages.
+
+    Args:
+        config_path (str): Path to the configuration directory.
+        manipulator (str): The manipulator name to determine the file name.
+
+    Returns:
+        List[ViewPoint]: A list of ViewPoint messages.
+    """
+    file_path = path.abspath(path.join(config_path, f"{manipulator}_viewpoints.txt"))
+    with open(file_path, "r") as file:
         lines = file.readlines()
-    data = []
+    
+    viewpoints = []
     for line in lines:
         values = [float(x) for x in line.strip().split(",")]
-        data.append(values)
-    return np.asarray(data)
+        viewpoint = ViewPoint()
+        viewpoint.position.x = values[1]
+        viewpoint.position.y = values[2]
+        viewpoint.position.z = values[3]
+        viewpoint.orientation.x = 0.0
+        viewpoint.orientation.y = 0.0
+        viewpoint.orientation.z = 0.0
+        viewpoint.orientation.w = 0.0
+        viewpoints.append(viewpoint)
 
-
-def get_pointcloud(data, status, robot_model, counter, write_path):
-    if data and status:
-        scan_name = f"{robot_model}_{counter:03d}.pcd"
-        scan_path = os.path.join(write_path, scan_name)
-        write_pointcloud(data, scan_path)
-
-
-def write_pointcloud(data, path):
-    """
-    
-    """
-    gen = read_pcd(data, skip_nans=True)
-    ints = list(gen)
-    xyz = np.array([[x[0], x[1], x[2]] for x in ints])
-    rgb = np.array([unpack_rgb(x[3]) for x in ints])
-    o3d_cloud = o3d.geometry.PointCloud()
-    o3d_cloud.points = o3d.utility.Vector3dVector(xyz)
-    o3d_cloud.colors = o3d.utility.Vector3dVector(rgb / 255.0)
-    o3d.io.write_point_cloud(path, o3d_cloud)
-
-
-def read_pcd(cloud, field_names=None, skip_nans=False, uvs=[]):
-    assert isinstance(cloud, PointCloud2), 'cloud is not a sensor_msgs.msg.PointCloud2'
-    fmt = _get_struct_fmt(cloud.is_bigendian, cloud.fields, field_names)
-    width, height, point_step, row_step, data, isnan = cloud.width, cloud.height, cloud.point_step, cloud.row_step, cloud.data, math.isnan
-    unpack_from = struct.Struct(fmt).unpack_from
-
-    if skip_nans:
-        if uvs:
-            for u, v in uvs:
-                p = unpack_from(data, (row_step * v) + (point_step * u))
-                has_nan = False
-                for pv in p:
-                    if isnan(pv):
-                        has_nan = True
-                        break
-                if not has_nan:
-                    yield p
-        else:
-            for v in range(height):
-                offset = row_step * v
-                for u in range(width):
-                    p = unpack_from(data, offset)
-                    has_nan = False
-                    for pv in p:
-                        if isnan(pv):
-                            has_nan = True
-                            break
-                    if not has_nan:
-                        yield p
-                    offset += point_step
-    else:
-        if uvs:
-            for u, v in uvs:
-                yield unpack_from(data, (row_step * v) + (point_step * u))
-        else:
-            for v in range(height):
-                offset = row_step * v
-                for u in range(width):
-                    yield unpack_from(data, offset)
-                    offset += point_step
-
-
-#
-def _get_struct_fmt(is_bigendian, fields, field_names=None):
-    fmt = '>' if is_bigendian else '<'
-
-    offset = 0
-    for field in (f for f in sorted(fields, key=lambda f: f.offset) if field_names is None or f.name in field_names):
-        if offset < field.offset:
-            fmt += 'x' * (field.offset - offset)
-            offset = field.offset
-        if field.datatype not in _DATATYPES:
-            print('Skipping unknown PointField datatype [%d]' % field.datatype, file=sys.stderr)
-        else:
-            datatype_fmt, datatype_length = _DATATYPES[field.datatype]
-            fmt += field.count * datatype_fmt
-            offset += field.count * datatype_length
-
-    return fmt
-
-
-#
-def unpack_rgb(packed):
-    s = struct.pack('>f', packed)
-    i = struct.unpack('>l', s)[0]
-    pack = ctypes.c_uint32(i).value
-    r = (pack & 0x00FF0000) >> 16
-    g = (pack & 0x0000FF00) >> 8
-    b = (pack & 0x000000FF)
-
-    return [r, g, b]
-
-
-def write_pcd_from_stl(read, write):
-    """
-    Write a PCD file equivalent to an STL file.
-
-    @param read: The path to the STL file.
-    @param write: The path to the PCD file.
-    """
-
-    if not os.path.exists(write):
-        os.makedirs(write)
-    stl = o3d.io.read_triangle_mesh(read)
-    pcd = stl.sample_points_uniformly(1000000)
-    o3d.io.write_point_cloud(write, pcd)
-
+    return viewpoints

@@ -1,6 +1,6 @@
+.vscode
 rms_ws/build
 rms_ws/install
 rms_ws/log
-.vscode
 __pycache__
-pointclouds/scans/2024-*
+scans/2024-*
